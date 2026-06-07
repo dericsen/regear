@@ -1,7 +1,6 @@
 // server.ts
 import express, { Request, Response, NextFunction } from "express";
 import path from "path";
-import { createServer as createViteServer } from "vite";
 import { db } from "./src/db/dbService.js";
 import { getSmartPriceSuggestions, analyzeGearAuthenticity } from "./src/services/aiService.js";
 import { User, Product, Review, Message, MeetupRequest, Comment } from "./src/types.js";
@@ -453,6 +452,7 @@ const PORT = 3000;
 
 async function run() {
   if (process.env.NODE_ENV !== "production") {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
