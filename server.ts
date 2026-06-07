@@ -421,7 +421,7 @@ async function startServer() {
     }
 
     // Generate automatic notification message in chat!
-    const directionStr = status === "accepted" ? "APPROVED 🤝" : "DECLINED ❌";
+    const directionStr = status === "accepted" ? "APPROVED" : "DECLINED";
     const automsg: Message = {
       id: "msg-auto-" + Math.random().toString(36).substring(2, 9),
       senderId: req.user.id,

@@ -668,7 +668,17 @@ export default function App() {
           role: authForm.role,
         }),
       });
-      const data = await res.json();
+
+      let data: any = {};
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        const cleanText = text.substring(0, 150).replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+        throw new Error(cleanText || `Server returned status code ${res.status}`);
+      }
+
       if (!res.ok) {
         setAuthError(data.error || "Authentication failed");
         return;
