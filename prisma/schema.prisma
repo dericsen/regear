@@ -1,0 +1,126 @@
+// prisma/schema.prisma
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  BUYER
+  SELLER
+}
+
+enum Condition {
+  NEW
+  LIKE_NEW
+  USED
+  HEAVILY_USED
+}
+
+enum MeetupStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+model User {
+  id               String          @id @default(uuid())
+  username         String          @unique
+  email            String          @unique
+  passwordHash     String
+  profileImage     String?
+  bio              String?
+  musicGenre       String?
+  instrumentsOwned String[]        // List of instruments owned
+  role             Role            @default(BUYER)
+  isVerified       Boolean         @default(false)
+  rating           Float           @default(5.0)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  // Relations
+  products         Product[]       @relation("UserProducts")
+  reviewsGiven     Review[]        @relation("Reviewer")
+  reviewsReceived  Review[]        @relation("SellerReviews")
+  messagesSent     Message[]       @relation("Sender")
+  messagesReceived Message[]       @relation("Receiver")
+  meetupRequests   MeetupRequest[] @relation("BuyerMeetups")
+  meetupIncoming   MeetupRequest[] @relation("SellerMeetups")
+  comments         Comment[]
+}
+
+model Product {
+  id                  String          @id @default(uuid())
+  title               String
+  description         String
+  price               Float
+  condition           Condition
+  category            String          // e.g., "Guitar", "Keyboard", "Amp", "Effects", "Other"
+  images              String[]        // Image URLs
+  demoVideo           String?         // URL of demo video (crucial for trust)
+  isVerifiedGear      Boolean         @default(false)
+  verificationScore   Float?          // AI verification authenticity rating (percentage)
+  suggestedPriceMin   Float?          // AI Smart pricing lower bound
+  suggestedPriceMax   Float?          // AI Smart pricing upper bound
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  // Seller
+  sellerId            String
+  seller              User            @relation("UserProducts", fields: [sellerId], references: [id], onDelete: Cascade)
+
+  // Relations
+  reviews             Review[]
+  meetupRequests      MeetupRequest[]
+  comments            Comment[]
+}
+
+model Review {
+  id           String   @id @default(uuid())
+  productId    String
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  reviewerId   String
+  reviewer     User     @relation("Reviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+  sellerId     String
+  seller       User     @relation("SellerReviews", fields: [sellerId], references: [id], onDelete: Cascade)
+  rating       Int      // 1 to 5 stars
+  comment      String
+  createdAt    DateTime @default(now())
+}
+
+model Message {
+  id         String   @id @default(uuid())
+  senderId   String
+  sender     User     @relation("Sender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId String
+  receiver   User     @relation("Receiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  content    String
+  createdAt  DateTime @default(now())
+}
+
+model MeetupRequest {
+  id          String       @id @default(uuid())
+  productId   String
+  product     Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  buyerId     String
+  buyer       User         @relation("BuyerMeetups", fields: [buyerId], references: [id], onDelete: Cascade)
+  sellerId    String
+  seller      User         @relation("SellerMeetups", fields: [sellerId], references: [id], onDelete: Cascade)
+  message     String
+  status      MeetupStatus @default(PENDING)
+  createdAt   DateTime     @default(now())
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content   String   // Question/Comment: e.g., "Is this worth it?"
+  createdAt DateTime @default(now())
+}

@@ -1,0 +1,232 @@
+{
+  "users": [
+    {
+      "id": "seller-jimi",
+      "username": "JimiToneMaster",
+      "email": "jimi@regear.com",
+      "profileImage": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400&auto=format&fit=crop",
+      "bio": "Classic rock and blues expert. Collecting and trading since the late 70s. All gear is certified pristine.",
+      "musicGenre": "Psychedelic Rock / Blues",
+      "instrumentsOwned": [
+        "1968 Fender Stratocaster",
+        "vintage Marshall Plexi Amp",
+        "Univibe Pedal"
+      ],
+      "role": "seller",
+      "isVerified": true,
+      "rating": 4.8,
+      "createdAt": "2025-01-15T08:00:00.000Z"
+    },
+    {
+      "id": "seller-moog",
+      "username": "SynthSynthesist",
+      "email": "synth@regear.com",
+      "profileImage": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=400&auto=format&fit=crop",
+      "bio": "Analog synthesizers builder and audio engineer. Specializing in modular components and custom filter circuitry.",
+      "musicGenre": "Electronic / Ambient",
+      "instrumentsOwned": [
+        "Custom Eurorack Modular",
+        "Moog One",
+        "Korg MS-20"
+      ],
+      "role": "seller",
+      "isVerified": true,
+      "rating": 4.9,
+      "createdAt": "2025-02-10T11:30:00.000Z"
+    },
+    {
+      "id": "buyer-david",
+      "username": "DavidSustain",
+      "email": "david@regear.com",
+      "profileImage": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400&auto=format&fit=crop",
+      "bio": "Looking for long delays and warm tones. Constantly exploring soundscapes.",
+      "musicGenre": "Progressive Rock / Ambient",
+      "instrumentsOwned": [
+        "Black Strat",
+        "Binson Echorec Delay"
+      ],
+      "role": "buyer",
+      "isVerified": false,
+      "rating": 5,
+      "createdAt": "2025-03-01T15:45:00.000Z"
+    },
+    {
+      "id": "usr-jk8oeg3",
+      "username": "ddd",
+      "email": "dericsen.lim@gmail.com",
+      "profileImage": "https://api.dicebear.com/7.x/identicon/svg?seed=ddd",
+      "bio": "",
+      "musicGenre": "",
+      "instrumentsOwned": [],
+      "role": "seller",
+      "isVerified": false,
+      "rating": 5,
+      "createdAt": "2026-06-07T10:01:11.720Z"
+    }
+  ],
+  "products": [
+    {
+      "id": "prod-strat",
+      "title": "1978 Fender Stratocaster Vintage Sunburst",
+      "description": "Fully original 1978 Sunburst Stratocaster with an ash body and maple fretboard. Incredible acoustic resonance. Original grey bottom pickups with a warm, distinctive 70s chime. Single owner, gigged lightly. Minor belt buckle rash on the back, but structural condition is pristine.",
+      "price": 2450,
+      "condition": "Used",
+      "category": "Guitars",
+      "images": [
+        "https://images.unsplash.com/photo-1507838153414-b4b713384a76?q=80&w=1000&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1550985616-10810253b84d?q=80&w=1000&auto=format&fit=crop"
+      ],
+      "demoVideo": "https://www.w3schools.com/html/mov_bbb.mp4",
+      "sellerId": "seller-jimi",
+      "sellerName": "JimiToneMaster",
+      "sellerVerified": true,
+      "sellerRating": 4.8,
+      "isVerifiedGear": true,
+      "verificationScore": 96,
+      "suggestedPriceMin": 2200,
+      "suggestedPriceMax": 2600,
+      "createdAt": "2026-05-10T12:00:00.000Z"
+    },
+    {
+      "id": "prod-sub37",
+      "title": "Moog Subsequent 37 Dual-VCO Synthesizer",
+      "description": "In immaculate condition. No scratches, smoke-free home studio usage only. The subsequent 37 upgrades the classic Sub 37 engine with twice the mixer headroom, more filter drive options, and a supreme Fatar keyboard bed. Includes original wooden side panels, box, power supply, and templates.",
+      "price": 1350,
+      "condition": "Like New",
+      "category": "Keyboards",
+      "images": [
+        "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80&w=1000&auto=format&fit=crop"
+      ],
+      "demoVideo": "https://www.w3schools.com/html/movie.mp4",
+      "sellerId": "seller-moog",
+      "sellerName": "SynthSynthesist",
+      "sellerVerified": true,
+      "sellerRating": 4.9,
+      "isVerifiedGear": true,
+      "verificationScore": 98,
+      "suggestedPriceMin": 1250,
+      "suggestedPriceMax": 1450,
+      "createdAt": "2026-05-18T16:20:00.000Z"
+    },
+    {
+      "id": "prod-jcm800",
+      "title": "Marshall JCM800 2203 100-Watt Amplifier Head",
+      "description": "Vintage 1984 Marshall JCM800. Authentic rock sound that defined the 80s. Retubed with premium matched Electro-Harmonix EL34s and filtered JJ caps last month. Features a Master Volume mod that allows organic tubes crunch at sensible levels. Massive gain response.",
+      "price": 1750,
+      "condition": "Used",
+      "category": "Amps",
+      "images": [
+        "https://images.unsplash.com/photo-1598653222000-6b7b7a552625?q=80&w=1000&auto=format&fit=crop"
+      ],
+      "demoVideo": "",
+      "sellerId": "seller-jimi",
+      "sellerName": "JimiToneMaster",
+      "sellerVerified": true,
+      "sellerRating": 4.8,
+      "isVerifiedGear": true,
+      "verificationScore": 91,
+      "suggestedPriceMin": 1600,
+      "suggestedPriceMax": 1900,
+      "createdAt": "2026-05-25T10:15:00.000Z"
+    },
+    {
+      "id": "prod-bigsky",
+      "title": "Strymon BigSky Multidimensional Space Reverb",
+      "description": "Brand new, never mounted on a pedalboard. Strymon BigSky features twelve premium reverb machines including Room, Hall, Plate, Spring, Swell, Bloom, Cloud, Chorale, and Magneto. True bypass with full factory warranty in box with original 9V charger.",
+      "price": 420,
+      "condition": "New",
+      "category": "Effects",
+      "images": [
+        "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=1000&auto=format&fit=crop"
+      ],
+      "demoVideo": "https://www.w3schools.com/html/mov_bbb.mp4",
+      "sellerId": "seller-moog",
+      "sellerName": "SynthSynthesist",
+      "sellerVerified": true,
+      "sellerRating": 4.9,
+      "isVerifiedGear": false,
+      "verificationScore": 100,
+      "suggestedPriceMin": 390,
+      "suggestedPriceMax": 440,
+      "createdAt": "2026-06-01T09:30:00.000Z"
+    }
+  ],
+  "reviews": [
+    {
+      "id": "rev-1",
+      "productId": "prod-strat",
+      "reviewerId": "buyer-david",
+      "reviewerName": "DavidSustain",
+      "sellerId": "seller-jimi",
+      "rating": 5,
+      "comment": "Incredible transaction! Item was packed perfectly and sounds even better than described. Real vintage authority here.",
+      "createdAt": "2026-05-15T15:00:00.000Z"
+    },
+    {
+      "id": "rev-2",
+      "productId": "prod-sub37",
+      "reviewerId": "buyer-david",
+      "reviewerName": "DavidSustain",
+      "sellerId": "seller-moog",
+      "rating": 5,
+      "comment": "Wendy is a legend. The subsequent has custom presets loaded that are absolutely beautiful. Super fast shipping.",
+      "createdAt": "2026-05-22T19:00:00.000Z"
+    }
+  ],
+  "messages": [
+    {
+      "id": "msg-1",
+      "senderId": "buyer-david",
+      "senderName": "DavidSustain",
+      "receiverId": "seller-jimi",
+      "receiverName": "JimiToneMaster",
+      "productId": "prod-strat",
+      "content": "Hey Jimi, love the 1978 Sunburst Strat. Is the neck fully straight and original truss rod functional?",
+      "createdAt": "2026-06-05T10:00:00.000Z"
+    },
+    {
+      "id": "msg-2",
+      "senderId": "seller-jimi",
+      "senderName": "JimiToneMaster",
+      "receiverId": "buyer-david",
+      "receiverName": "DavidSustain",
+      "productId": "prod-strat",
+      "content": "Hey David! Yes indeed, neck is straight as an arrow and truss rod works smoothly package-turn both directions. It's a real dream to play.",
+      "createdAt": "2026-06-05T10:30:00.000Z"
+    }
+  ],
+  "meetupRequests": [
+    {
+      "id": "meet-1",
+      "productId": "prod-strat",
+      "productTitle": "1978 Fender Stratocaster Vintage Sunburst",
+      "buyerId": "buyer-david",
+      "buyerName": "DavidSustain",
+      "sellerId": "seller-jimi",
+      "sellerName": "JimiToneMaster",
+      "message": "I'd love to try it out on an amp. Would you be open for a quick demo at a local studio next Tuesday afternoon?",
+      "status": "accepted",
+      "createdAt": "2026-06-06T14:00:00.000Z"
+    }
+  ],
+  "comments": [
+    {
+      "id": "com-1",
+      "productId": "prod-strat",
+      "userId": "buyer-david",
+      "userName": "DavidSustain",
+      "userProfileImage": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400&auto=format&fit=crop",
+      "content": "Do you feel the ash body heavy weight limits long gig performance on this guy?",
+      "createdAt": "2026-06-05T11:00:00.000Z"
+    },
+    {
+      "id": "com-2",
+      "productId": "prod-strat",
+      "userId": "seller-jimi",
+      "userName": "JimiToneMaster",
+      "userProfileImage": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400&auto=format&fit=crop",
+      "content": "It's around 8.4 lbs - solid but nicely distributed. I played 2-hour set with it with a wide leather strap comfortably, hope that helps!",
+      "createdAt": "2026-06-05T12:00:00.000Z"
+    }
+  ]
+}

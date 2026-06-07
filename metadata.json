@@ -1,0 +1,6 @@
+{
+  "name": "Regear",
+  "description": "A niche marketplace for buying and selling second-hand musical instruments with smart price suggestions, audio demos, trust rating, try-before-buy, and AI-based verification.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
