@@ -75,6 +75,19 @@
       "isVerified": false,
       "rating": 5,
       "createdAt": "2026-06-07T10:20:23.529Z"
+    },
+    {
+      "id": "usr-jepvcqi",
+      "username": "derictest",
+      "email": "derictest@gmail.com",
+      "profileImage": "https://api.dicebear.com/7.x/identicon/svg?seed=derictest",
+      "bio": "",
+      "musicGenre": "",
+      "instrumentsOwned": [],
+      "role": "buyer",
+      "isVerified": false,
+      "rating": 5,
+      "createdAt": "2026-06-07T10:33:00.467Z"
     }
   ],
   "products": [

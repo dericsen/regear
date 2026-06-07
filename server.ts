@@ -15,9 +15,8 @@ declare global {
   }
 }
 
-async function startServer() {
-  const app = express();
-  const PORT = 3000;
+export const app = express();
+const PORT = 3000;
 
   // Use JSON middleware
   app.use(express.json());
@@ -450,6 +449,9 @@ async function startServer() {
 
 
   // --- Vite Dev Server Middleware Integration ---
+  // On Vercel, static files are served natively via CDN, so this fallback is reserved for dev/local.
+
+async function run() {
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -465,9 +467,13 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`[Regear Backend Server] Running on http://0.0.0.0:${PORT}`);
-  });
+  // Only bind the port and start the listener if we are NOT on Vercel as a Serverless Function
+  if (!process.env.VERCEL) {
+    const LISTEN_PORT = Number(process.env.PORT) || 3000;
+    app.listen(LISTEN_PORT, "0.0.0.0", () => {
+      console.log(`[Regear Backend Server] Running on http://0.0.0.0:${LISTEN_PORT}`);
+    });
+  }
 }
 
-startServer();
+run();

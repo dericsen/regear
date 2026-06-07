@@ -675,7 +675,10 @@ export default function App() {
         data = await res.json();
       } else {
         const text = await res.text();
-        const cleanText = text.substring(0, 150).replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+        let cleanText = text.substring(0, 150).replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+        if (cleanText.includes("NOT_FOUND") || cleanText.includes("Action required") || cleanText.includes("The page could not be found")) {
+          cleanText = "Platform proxy block. Please open the app in a NEW TAB (button at top-right of the preview window) to bypass browser cookie security constraints.";
+        }
         throw new Error(cleanText || `Server returned status code ${res.status}`);
       }
 
