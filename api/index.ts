@@ -4,8 +4,16 @@ const app = express();
 
 app.use(express.json());
 
-app.get("/api/health", (_, res) => {
-  res.json({ status: "ok" });
+app.post("/api/auth/register", (req, res) => {
+  const { username, email } = req.body;
+
+  res.json({
+    success: true,
+    user: {
+      username,
+      email
+    }
+  });
 });
 
 export default app;
