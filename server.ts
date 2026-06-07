@@ -451,14 +451,16 @@ const PORT = 3000;
   // On Vercel, static files are served natively via CDN, so this fallback is reserved for dev/local.
 
 async function run() {
-  if (process.env.NODE_ENV !== "production") {
-    const { createServer: createViteServer } = await import("vite");
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
-    app.use(vite.middlewares);
-  } else {
+  if (!process.env.VERCEL && process.env.NODE_ENV !== "production") {
+  const { createServer: createViteServer } = await import("vite");
+
+  const vite = await createViteServer({
+    server: { middlewareMode: true },
+    appType: "spa",
+  });
+
+  app.use(vite.middlewares);
+}else {
     // Production serving static dist files
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
