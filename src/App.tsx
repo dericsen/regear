@@ -29,6 +29,8 @@ import {
   Check,
   CheckCircle,
   RefreshCw,
+  Edit,
+  Trash2,
 } from "lucide-react";
 import { User, Product, Comment, Message, MeetupRequest, Review } from "./types";
 
@@ -88,6 +90,7 @@ export default function App() {
   const [aiPriceRange, setAiPriceRange] = useState<{ min: number; max: number; tip: string } | null>(null);
   const [aiAuthenticityCheck, setAiAuthenticityCheck] = useState<{ score: number; reasoning: string } | null>(null);
   const [isSellingLoading, setIsSellingLoading] = useState(false);
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
 
   // --- Chat State ---
   const [conversations, setConversations] = useState<{ id: string; name: string; lastMessage: string; time: string }[]>([]);
@@ -107,7 +110,7 @@ export default function App() {
 
   // --- Notification Message ---
   const [systemTip, setSystemTip] = useState<string | null>(
-    "Tap on any profile avatar or easy credentials bar to switch roles instantly and test both buyer and seller perspectives."
+    "Welcome to Regear Studio - Trust-rated authentic musical instruments marketplace."
   );
 
   // --- Fetch Products on mount ---
@@ -418,6 +421,48 @@ export default function App() {
 
     setIsSellingLoading(true);
     try {
+      if (editingProductId) {
+        const res = await fetch(`/api/products/${editingProductId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            title: newGear.title,
+            description: newGear.description,
+            price: newGear.price,
+            condition: newGear.condition,
+            category: newGear.category,
+            images: newGear.imageUrl ? [newGear.imageUrl] : [],
+            demoVideo: newGear.demoUrl,
+          }),
+        });
+        if (res.ok) {
+          const updated = await res.json();
+          showSuccessTip(`Listing "${updated.title}" updated successfully!`);
+          setEditingProductId(null);
+          setNewGear({
+            title: "",
+            description: "",
+            price: "",
+            condition: "Used",
+            category: "Guitars",
+            imageUrl: "",
+            demoUrl: "",
+          });
+          setAiPriceRange(null);
+          setAiAuthenticityCheck(null);
+          setSelectedProduct(updated);
+          setActiveTab("marketplace");
+          fetchProducts();
+        } else {
+          const err = await res.json();
+          alert(err.error || "Failed to update gear listing.");
+        }
+        return;
+      }
+
       const res = await fetch("/api/products", {
         method: "POST",
         headers: {
@@ -530,44 +575,10 @@ export default function App() {
         setChatMessages((prev) => [...prev, msg]);
         setNewMessageText("");
         fetchConversations();
-
-        // 3-second simulation trigger to receive mock reply from the vintage enthusiast!
-        setTimeout(() => {
-          triggerMockSellersReply(activeChatPartner);
-        }, 2200);
       }
     } catch (err) {
       console.error(err);
     }
-  };
-
-  const triggerMockSellersReply = async (sellerId: string) => {
-    const partner = conversations.find((c) => c.id === sellerId) || { name: "Musician" };
-    const randomReplies = [
-      "That sounds like a fair point! I usually meet near the local coffee shop downtown or the rehearsal rooms on Grand Ave. Would love to demo the audio tone live.",
-      "Yes, it has been stored upright in a hard-shell case with dual humidifiers. Let me know if you want another picture of the custom truss serial number.",
-      "The price is slightly negotiable for active players. If you try it and love the dynamic pickup sounds, we can strike a solid deal for sure!",
-      "I appreciate the interest! Let me review my calendar real quick, I am free this Sunday or tomorrow evening for a test session.",
-    ];
-    const content = randomReplies[Math.floor(Math.random() * randomReplies.length)];
-    
-    // Call server to add a message from them back to current user
-    try {
-      await fetch("/api/chat/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${sellerId}`, // Authenticated via their user ID direct token bypass
-        },
-        body: JSON.stringify({
-          receiverId: currentUser!.id,
-          content: content,
-          productId: selectedProduct?.id,
-        }),
-      });
-      fetchChatMessages(sellerId);
-      fetchConversations();
-    } catch (_) {}
   };
 
   // --- Meetups Operations ---
@@ -730,6 +741,56 @@ export default function App() {
     setActiveTab("marketplace");
   };
 
+  const handleStartEditGear = (prod: Product) => {
+    setEditingProductId(prod.id);
+    setNewGear({
+      title: prod.title,
+      description: prod.description,
+      price: prod.price.toString(),
+      condition: prod.condition as any,
+      category: prod.category,
+      imageUrl: prod.images[0] || "",
+      demoUrl: prod.demoVideo || "",
+    });
+    setAiPriceRange({
+      min: prod.suggestedPriceMin || Math.round(prod.price * 0.9),
+      max: prod.suggestedPriceMax || Math.round(prod.price * 1.1),
+      tip: "Listing details are loaded. Adjust specs to view live market suggested prices."
+    });
+    setAiAuthenticityCheck({
+      score: prod.verificationScore || 95,
+      reasoning: "Reviewing active product editing authenticity screening profile."
+    });
+    setActiveTab("sell");
+  };
+
+  const handleDeleteGear = async (productId: string) => {
+    if (!token) return;
+    if (!window.confirm("Are you sure you want to delete this listing? This action cannot be undone.")) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/products/${productId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.ok) {
+        showSuccessTip("Listing deleted successfully.");
+        setSelectedProduct(null);
+        fetchProducts();
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to delete listing.");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   // System alert tips logic
   const showSuccessTip = (msg: string) => {
     setSystemTip(msg);
@@ -746,54 +807,6 @@ export default function App() {
   return (
     <div id="elegant-dark-node" className="bg-[#0a0a0b] text-[#e0e0e0] font-sans min-h-screen flex flex-col antialiased selection:bg-[#f27d26] selection:text-black">
       
-      {/* Top Bar for Rapid Role-Switch Testing */}
-      <div className="bg-[#141416] border-b border-white/5 py-2 px-8 flex flex-wrap justify-between items-center text-xs text-white/50 space-y-1 sm:space-y-0">
-        <div className="flex items-center space-x-2">
-          <span className="inline-block w-1.5 h-1.5 bg-[#f27d26] rounded-full animate-ping"></span>
-          <span className="font-semibold text-white/70 tracking-tight">EASY CREDENTIALS SWITCHER (TEST HUB):</span>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={() => handleInstantLogin("DavidSustain")}
-            className={`px-3 py-1 rounded text-[11px] font-medium transition-all ${
-              currentUser?.username === "DavidSustain"
-                ? "bg-[#f27d26]/20 text-[#f27d26] border border-[#f27d26]"
-                : "bg-white/5 hover:bg-white/10 text-white/80"
-            }`}
-          >
-            Buyer Profile (David)
-          </button>
-          <button
-            onClick={() => handleInstantLogin("JimiToneMaster")}
-            className={`px-3 py-1 rounded text-[11px] font-medium transition-all ${
-              currentUser?.username === "JimiToneMaster"
-                ? "bg-[#f27d26]/20 text-[#f27d26] border border-[#f27d26]"
-                : "bg-white/5 hover:bg-white/10 text-white/80"
-            }`}
-          >
-            Seller Profile (Jimi)
-          </button>
-          <button
-            onClick={() => handleInstantLogin("SynthSynthesist")}
-            className={`px-3 py-1 rounded text-[11px] font-medium transition-all ${
-              currentUser?.username === "SynthSynthesist"
-                ? "bg-[#f27d26]/20 text-[#f27d26] border border-[#f27d26]"
-                : "bg-white/5 hover:bg-white/10 text-white/80"
-            }`}
-          >
-            Seller Profile (Synth)
-          </button>
-          {currentUser && (
-            <button
-              onClick={() => toggleVerifiedBadge(currentUser.id)}
-              className="px-2 py-0.5 bg-yellow-400/10 hover:bg-yellow-400/20 text-yellow-400 rounded-full text-[10px] border border-yellow-400/30 font-semibold"
-            >
-              Verify {currentUser.username} Badge Toggle
-            </button>
-          )}
-        </div>
-      </div>
-
       {/* Main Header Navigation */}
       <nav id="header-nav-comp" className="h-20 border-b border-white/10 flex items-center justify-between px-8 bg-[#09090a] sticky top-0 z-40">
         <div className="flex items-center space-x-10">
@@ -1244,26 +1257,48 @@ export default function App() {
 
                       {/* Live Actions & Try Out buttons */}
                       <div className="space-y-3 pt-6 border-t border-white/5">
-                        <div className="flex space-x-3">
-                          <button
-                            onClick={() => startInstantChatWithSeller(selectedProduct.sellerId, selectedProduct.sellerName)}
-                            className="flex-1 py-3 bg-[#f27d26] hover:bg-[#d15a1a] text-black font-extrabold rounded-xl transition-all text-sm uppercase tracking-wider flex items-center justify-center space-x-2"
-                          >
-                            <MessageSquare className="w-4 h-4" />
-                            <span>Contact Seller (Negotiate)</span>
-                          </button>
-                          
-                          <button
-                            onClick={() => {
-                              if (!currentUser) setIsLoginModalOpen(true);
-                              else setIsMeetupModalOpen(true);
-                            }}
-                            className="px-4 py-3 bg-white/10 hover:bg-white/15 text-white font-extrabold rounded-xl transition-all text-xs uppercase tracking-wider flex items-center justify-center space-x-1.5 border border-white/5"
-                          >
-                            <Calendar className="w-4 h-4 text-[#f27d26]" />
-                            <span>Try Before Buy</span>
-                          </button>
-                        </div>
+                        {currentUser && selectedProduct.sellerId === currentUser.id ? (
+                          <div className="flex space-x-3">
+                            <button
+                              id="btn-edit-gear"
+                              onClick={() => handleStartEditGear(selectedProduct)}
+                              className="flex-1 py-3 bg-[#f27d26] hover:bg-[#d15a1a] text-black font-extrabold rounded-xl transition-all text-sm uppercase tracking-wider flex items-center justify-center space-x-2"
+                            >
+                              <Edit className="w-4 h-4" />
+                              <span>Edit Listing Specs</span>
+                            </button>
+                            
+                            <button
+                              id="btn-delete-gear"
+                              onClick={() => handleDeleteGear(selectedProduct.id)}
+                              className="px-4 py-3 bg-red-600/20 hover:bg-red-600/30 text-red-500 font-extrabold rounded-xl transition-all text-xs uppercase tracking-wider flex items-center justify-center space-x-1.5 border border-red-500/30"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              <span>Delete Listing</span>
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex space-x-3">
+                            <button
+                              onClick={() => startInstantChatWithSeller(selectedProduct.sellerId, selectedProduct.sellerName)}
+                              className="flex-1 py-3 bg-[#f27d26] hover:bg-[#d15a1a] text-black font-extrabold rounded-xl transition-all text-sm uppercase tracking-wider flex items-center justify-center space-x-2"
+                            >
+                              <MessageSquare className="w-4 h-4" />
+                              <span>Contact Seller (Negotiate)</span>
+                            </button>
+                            
+                            <button
+                              onClick={() => {
+                                if (!currentUser) setIsLoginModalOpen(true);
+                                else setIsMeetupModalOpen(true);
+                              }}
+                              className="px-4 py-3 bg-white/10 hover:bg-white/15 text-white font-extrabold rounded-xl transition-all text-xs uppercase tracking-wider flex items-center justify-center space-x-1.5 border border-white/5"
+                            >
+                              <Calendar className="w-4 h-4 text-[#f27d26]" />
+                              <span>Try Before Buy</span>
+                            </button>
+                          </div>
+                        )}
 
                         {/* Leave a review workflow */}
                         <div className="flex justify-between items-center">
@@ -1511,10 +1546,20 @@ export default function App() {
           <main className="flex-1 p-8 overflow-y-auto max-w-4xl mx-auto w-full space-y-8 animate-fade-in">
             <div>
               <h2 className="text-2xl font-light italic tracking-tight uppercase">
-                List your <span className="font-extrabold not-italic text-white">Instrument</span>
+                {editingProductId ? (
+                  <>
+                    Edit your <span className="font-extrabold not-italic text-white">Instrument Listing</span>
+                  </>
+                ) : (
+                  <>
+                    List your <span className="font-extrabold not-italic text-white">Instrument</span>
+                  </>
+                )}
               </h2>
               <p className="text-xs text-white/40 mt-1">
-                Calculate smart suggested pricing on-demand, scan authenticity, and load a Trust demo-tape.
+                {editingProductId
+                  ? "Modify your gear listing title, pricing, image, or demo tape path below."
+                  : "Calculate smart suggested pricing on-demand, scan authenticity, and load a Trust demo-tape."}
               </p>
             </div>
 
@@ -1633,15 +1678,39 @@ export default function App() {
                   {isSellingLoading ? (
                     <>
                       <RefreshCw className="w-4 h-4 animate-spin" />
-                      <span>Uploading instrument...</span>
+                      <span>{editingProductId ? "Updating listing..." : "Uploading instrument..."}</span>
                     </>
                   ) : (
                     <>
                       <Guitar className="w-4 h-4" />
-                      <span>Post Product to Regear Marketplace</span>
+                      <span>{editingProductId ? "Save Edited Changes" : "Post Product to Regear Marketplace"}</span>
                     </>
                   )}
                 </button>
+
+                {editingProductId && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingProductId(null);
+                      setNewGear({
+                        title: "",
+                        description: "",
+                        price: "",
+                        condition: "Used",
+                        category: "Guitars",
+                        imageUrl: "",
+                        demoUrl: "",
+                      });
+                      setAiPriceRange(null);
+                      setAiAuthenticityCheck(null);
+                      setActiveTab("marketplace");
+                    }}
+                    className="w-full py-2.5 bg-white/5 border border-white/10 hover:bg-white/10 text-white/70 hover:text-white font-bold rounded-xl transition-all text-xs uppercase tracking-wider mt-2"
+                  >
+                    Cancel Editing
+                  </button>
+                )}
               </form>
 
               {/* Right Column: AI Assistant suggestions display */}

@@ -222,6 +222,81 @@ const PORT = 3000;
     res.status(201).json(newProduct);
   });
 
+  // UPDATE PRODUCT (PUT /api/products/:id)
+  app.put("/api/products/:id", authMiddleware, async (req: Request, res: Response) => {
+    if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+
+    const prod = db.getProduct(req.params.id);
+    if (!prod) {
+      return res.status(404).json({ error: "Product gear listing not found" });
+    }
+
+    if (prod.sellerId !== req.user.id) {
+      return res.status(403).json({ error: "You are not authorized to update this listing" });
+    }
+
+    const { title, description, price, condition, category, images, demoVideo } = req.body;
+
+    if (!title || !description || !price || !condition || !category) {
+      return res.status(400).json({ error: "All gear listing fields are required" });
+    }
+
+    const priceNum = parseFloat(price);
+
+    // Call AI Pricing Suggestions for metadata record
+    let smartMin = priceNum * 0.9;
+    let smartMax = priceNum * 1.1;
+    try {
+      const result = await getSmartPriceSuggestions(category, condition, title, description);
+      smartMin = result.min;
+      smartMax = result.max;
+    } catch (_) {}
+
+    // Call AI For Fake Detection review
+    let score = prod.verificationScore;
+    try {
+      const check = await analyzeGearAuthenticity(title, description, priceNum);
+      score = check.score;
+    } catch (_) {}
+
+    const updated = db.updateProduct(prod.id, {
+      title,
+      description,
+      price: priceNum,
+      condition,
+      category,
+      images: Array.isArray(images) && images.length > 0 ? images : ["https://images.unsplash.com/photo-1511192336575-5a79af67a629?q=80&w=1000&auto=format&fit=crop"],
+      demoVideo: demoVideo || "",
+      isVerifiedGear: score >= 75,
+      verificationScore: score,
+      suggestedPriceMin: smartMin,
+      suggestedPriceMax: smartMax,
+    });
+
+    res.json(updated);
+  });
+
+  // DELETE PRODUCT (DELETE /api/products/:id)
+  app.delete("/api/products/:id", authMiddleware, (req: Request, res: Response) => {
+    if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+
+    const prod = db.getProduct(req.params.id);
+    if (!prod) {
+      return res.status(404).json({ error: "Product gear listing not found" });
+    }
+
+    if (prod.sellerId !== req.user.id) {
+      return res.status(403).json({ error: "You are not authorized to delete this listing" });
+    }
+
+    const success = db.deleteProduct(prod.id);
+    if (success) {
+      res.json({ success: true, message: "Listing deleted successfully" });
+    } else {
+      res.status(500).json({ error: "Failed to delete listing" });
+    }
+  });
+
   // 3. COMMENTS SECTION (COMMUNITY Q&A)
   app.get("/api/products/:id/comments", (req: Request, res: Response) => {
     res.json(db.getCommentsByProduct(req.params.id));
@@ -451,16 +526,14 @@ const PORT = 3000;
   // On Vercel, static files are served natively via CDN, so this fallback is reserved for dev/local.
 
 async function run() {
-  if (!process.env.VERCEL && process.env.NODE_ENV !== "production") {
-  const { createServer: createViteServer } = await import("vite");
-
-  const vite = await createViteServer({
-    server: { middlewareMode: true },
-    appType: "spa",
-  });
-
-  app.use(vite.middlewares);
-}else {
+  if (process.env.NODE_ENV !== "production") {
+    const { createServer: createViteServer } = await import("vite");
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: "spa",
+    });
+    app.use(vite.middlewares);
+  } else {
     // Production serving static dist files
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));

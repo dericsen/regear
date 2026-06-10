@@ -1,19 +1,5 @@
-import express from "express";
-
-const app = express();
-
-app.use(express.json());
-
-app.post("/api/auth/register", (req, res) => {
-  const { username, email } = req.body;
-
-  res.json({
-    success: true,
-    user: {
-      username,
-      email
-    }
-  });
-});
+// api/index.ts
+// Entry point for Vercel Serverless Functions
+import { app } from "../server";
 
 export default app;
