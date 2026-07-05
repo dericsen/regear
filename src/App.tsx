@@ -31,8 +31,10 @@ import {
   RefreshCw,
   Edit,
   Trash2,
+  Video,
 } from "lucide-react";
 import { User, Product, Comment, Message, MeetupRequest, Review } from "./types";
+import PromoReels from "./components/PromoReels";
 
 const CATEGORIES = ["Guitars", "Keyboards", "Amps", "Effects", "Other"];
 const CONDITIONS = ["New", "Like New", "Used", "Heavily Used"];
@@ -836,6 +838,18 @@ export default function App() {
             </button>
             <button
               onClick={() => {
+                setActiveTab("reels");
+                setSelectedProduct(null);
+              }}
+              className={`pb-1 transition-all hover:text-white flex items-center space-x-1.5 ${
+                activeTab === "reels" ? "text-white border-b-2 border-[#f27d26]" : "text-white/50"
+              }`}
+            >
+              <Video className="w-3.5 h-3.5 text-[#f27d26]" />
+              <span>Gear Reels 🎥</span>
+            </button>
+            <button
+              onClick={() => {
                 if (!currentUser) setIsLoginModalOpen(true);
                 else {
                   setActiveTab("sell");
@@ -965,6 +979,15 @@ export default function App() {
         </button>
         <button
           onClick={() => {
+            setActiveTab("reels");
+            setSelectedProduct(null);
+          }}
+          className={activeTab === "reels" ? "text-[#f27d26]" : ""}
+        >
+          Reels 🎥
+        </button>
+        <button
+          onClick={() => {
             if (!currentUser) setIsLoginModalOpen(true);
             else setActiveTab("sell");
           }}
@@ -1001,6 +1024,37 @@ export default function App() {
       {/* Main Content Layout container */}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         
+        {/* VIEW 0: PROMO REELS FEED */}
+        {activeTab === "reels" && (
+          <PromoReels
+            products={products}
+            currentUser={currentUser}
+            token={token}
+            onOpenLoginModal={() => setIsLoginModalOpen(true)}
+            onRequestMeetup={(product) => {
+              if (!currentUser) {
+                setIsLoginModalOpen(true);
+                return;
+              }
+              setSelectedProduct(product);
+              setMeetupMessage(`Hey ${product.sellerName}, I watched your promo video reel for the "${product.title}" and loved the tone! Would love to request a test meetup or try-out session.`);
+              setIsMeetupModalOpen(true);
+            }}
+            onContactSeller={(sellerId, sellerName, product) => {
+              if (!currentUser) {
+                setIsLoginModalOpen(true);
+                return;
+              }
+              if (product) setSelectedProduct(product);
+              startInstantChatWithSeller(sellerId, sellerName);
+            }}
+            onViewDetails={(product) => {
+              setSelectedProduct(product);
+              setActiveTab("marketplace");
+            }}
+          />
+        )}
+
         {/* VIEW 1: MARKETPLACE */}
         {activeTab === "marketplace" && (
           <>
