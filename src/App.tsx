@@ -100,6 +100,7 @@ export default function App() {
   const [chatMessages, setChatMessages] = useState<Message[]>([]);
   const [newMessageText, setNewMessageText] = useState("");
   const [isMessagesLoading, setIsMessagesLoading] = useState(false);
+  const chatInputRef = useRef<HTMLInputElement | null>(null);
 
   // --- Meetups State ---
   const [meetups, setMeetups] = useState<MeetupRequest[]>([]);
@@ -1955,9 +1956,41 @@ export default function App() {
                     })}
                   </div>
 
+                  {/* Quick-Reply Chips */}
+                  <div className="flex flex-col space-y-1.5 pb-2.5 pt-2 border-t border-white/5">
+                    <div className="flex items-center space-x-1.5 px-1">
+                      <Sparkles className="w-3 h-3 text-[#f27d26]" />
+                      <span className="text-[10px] uppercase tracking-wider text-white/40 font-mono font-bold">
+                        Quick Replies
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-2 overflow-x-auto no-scrollbar py-0.5 scroll-smooth">
+                      {[
+                        "Is it still available?",
+                        "What is your best price?",
+                        "Can I test it?",
+                        "Where can we meetup?",
+                        "Does it include cases/accessories?"
+                      ].map((reply, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => {
+                            setNewMessageText(reply);
+                            chatInputRef.current?.focus();
+                          }}
+                          className="px-3.5 py-1.5 bg-white/5 hover:bg-[#f27d26]/10 hover:text-[#f27d26] hover:border-[#f27d26]/30 text-white/80 border border-white/5 rounded-full text-[11px] font-semibold transition-all shrink-0 active:scale-95"
+                        >
+                          {reply}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   {/* Message Input form */}
                   <form onSubmit={sendChatMessage} className="flex space-x-3 pt-3 border-t border-white/5">
                     <input
+                      ref={chatInputRef}
                       type="text"
                       value={newMessageText}
                       onChange={(e) => setNewMessageText(e.target.value)}
