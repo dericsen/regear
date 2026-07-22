@@ -2,7 +2,6 @@
 
 export type Role = "buyer" | "seller";
 export type Condition = "New" | "Like New" | "Used" | "Heavily Used";
-export type MeetupStatus = "pending" | "accepted" | "declined";
 
 export interface User {
   id: string;
@@ -58,19 +57,6 @@ export interface Message {
   receiverName: string;
   productId?: string; // Optional context for the conversation
   content: string;
-  createdAt: string;
-}
-
-export interface MeetupRequest {
-  id: string;
-  productId: string;
-  productTitle: string;
-  buyerId: string;
-  buyerName: string;
-  sellerId: string;
-  sellerName: string;
-  message: string;
-  status: MeetupStatus;
   createdAt: string;
 }
 

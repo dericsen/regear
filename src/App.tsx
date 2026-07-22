@@ -34,7 +34,7 @@ import {
   Video,
   Zap,
 } from "lucide-react";
-import { User, Product, Comment, Message, MeetupRequest, Review } from "./types";
+import { User, Product, Comment, Message, Review } from "./types";
 import PromoReels from "./components/PromoReels";
 
 const CATEGORIES = ["Guitars", "Keyboards", "Amps", "Effects", "Other"];
@@ -56,7 +56,7 @@ export default function App() {
   const [profileInstruments, setProfileInstruments] = useState("");
 
   // --- Active Tab / View ---
-  const [activeTab, setActiveTab] = useState<"marketplace" | "sell" | "chat" | "meetups" | "profile">("marketplace");
+  const [activeTab, setActiveTab] = useState<"marketplace" | "sell" | "chat" | "reels" | "profile">("marketplace");
 
   // --- Marketplace Filters ---
   const [searchQuery, setSearchQuery] = useState("");
@@ -73,11 +73,22 @@ export default function App() {
   // --- Product Detail View States ---
   const [comments, setComments] = useState<Comment[]>([]);
   const [newCommentText, setNewCommentText] = useState("");
-  const [isMeetupModalOpen, setIsMeetupModalOpen] = useState(false);
-  const [meetupMessage, setMeetupMessage] = useState("");
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
+
+  // --- Post Promo Reel State ---
+  const [isPostReelModalOpen, setIsPostReelModalOpen] = useState(false);
+  const [isPostingReelLoading, setIsPostingReelLoading] = useState(false);
+  const [reelForm, setReelForm] = useState({
+    title: "",
+    category: "Guitars",
+    price: "",
+    videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-hand-of-a-guitarist-playing-acoustic-guitar-43405-large.mp4",
+    imageUrl: "",
+    condition: "Used" as any,
+    description: "",
+  });
 
   // --- Sell Gear Form State ---
   const [newGear, setNewGear] = useState({
@@ -99,10 +110,6 @@ export default function App() {
   const [newMessageText, setNewMessageText] = useState("");
   const [isMessagesLoading, setIsMessagesLoading] = useState(false);
   const chatInputRef = useRef<HTMLInputElement | null>(null);
-
-  // --- Meetups State ---
-  const [meetups, setMeetups] = useState<MeetupRequest[]>([]);
-  const [isMeetupsLoading, setIsMeetupsLoading] = useState(false);
 
   // --- Audio Waveform Simulator State ---
   const [isPlayingDemo, setIsPlayingDemo] = useState(false);
@@ -274,30 +281,52 @@ export default function App() {
     }
   };
 
-  const requestMeetup = async (e: React.FormEvent) => {
+  const handlePostReelSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentUser || !selectedProduct) return;
-
+    if (!currentUser || !token) {
+      setIsLoginModalOpen(true);
+      return;
+    }
+    setIsPostingReelLoading(true);
     try {
-      const res = await fetch(`/api/products/${selectedProduct.id}/meetup`, {
+      const res = await fetch("/api/products", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ message: meetupMessage }),
+        body: JSON.stringify({
+          title: reelForm.title,
+          description: reelForm.description || "Live instrument reel demo tape.",
+          price: parseFloat(reelForm.price) || 0,
+          condition: reelForm.condition,
+          category: reelForm.category,
+          images: [reelForm.imageUrl || "https://images.unsplash.com/photo-1511192336575-5a79af67a629?q=80&w=600&auto=format&fit=crop"],
+          demoVideo: reelForm.videoUrl,
+        }),
       });
       if (res.ok) {
-        showSuccessTip("Trial meetup requested successfully! The seller will receive your details.");
-        setIsMeetupModalOpen(false);
-        setMeetupMessage("");
-        fetchMeetups();
+        showSuccessTip("Your Promo Reel has been posted to the Gear Reels feed!");
+        setIsPostReelModalOpen(false);
+        setReelForm({
+          title: "",
+          category: "Guitars",
+          price: "",
+          videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-hand-of-a-guitarist-playing-acoustic-guitar-43405-large.mp4",
+          imageUrl: "",
+          condition: "Used",
+          description: "",
+        });
+        fetchProducts();
+        setActiveTab("reels");
       } else {
         const err = await res.json();
-        alert(err.error || "Failed to make request.");
+        alert(err.error || "Failed to post reel.");
       }
     } catch (err) {
       console.error(err);
+    } finally {
+      setIsPostingReelLoading(false);
     }
   };
 
@@ -524,44 +553,6 @@ export default function App() {
     }
   };
 
-  // --- Meetups Operations ---
-  const fetchMeetups = async () => {
-    if (!token) return;
-    setIsMeetupsLoading(true);
-    try {
-      const res = await fetch("/api/meetups", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setMeetups(data);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsMeetupsLoading(false);
-    }
-  };
-
-  const updateMeetupTracker = async (id: string, newStatus: "accepted" | "declined") => {
-    try {
-      const res = await fetch(`/api/meetups/${id}/status`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ status: newStatus }),
-      });
-      if (res.ok) {
-        showSuccessTip(`Meetup status successfully updated to: ${newStatus.toUpperCase()}`);
-        fetchMeetups();
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
   // --- Profile Edits ---
   const loadProfileFields = () => {
     if (!currentUser) return;
@@ -778,7 +769,7 @@ export default function App() {
               }`}
             >
               <Video className="w-3.5 h-3.5 text-[#f27d26]" />
-              <span>Gear Reels</span>
+              <span>Gear Reels 🎥</span>
             </button>
             <button
               onClick={() => {
@@ -810,16 +801,12 @@ export default function App() {
             <button
               onClick={() => {
                 if (!currentUser) setIsLoginModalOpen(true);
-                else {
-                  setActiveTab("meetups");
-                  fetchMeetups();
-                }
+                else setIsPostReelModalOpen(true);
               }}
-              className={`pb-1 transition-all hover:text-white ${
-                activeTab === "meetups" ? "text-white border-b-2 border-[#f27d26]" : "text-white/50"
-              }`}
+              className="px-3 py-1 bg-[#f27d26] text-black font-extrabold rounded-lg text-xs uppercase tracking-wider hover:opacity-90 shadow-md shadow-[#f27d26]/10 transition-all flex items-center space-x-1"
             >
-              Try-Out Requests
+              <Video className="w-3.5 h-3.5" />
+              <span>+ Post Reel</span>
             </button>
           </div>
         </div>
@@ -915,7 +902,7 @@ export default function App() {
           }}
           className={activeTab === "reels" ? "text-[#f27d26]" : ""}
         >
-          Reels 🎥
+          Reels 
         </button>
         <button
           onClick={() => {
@@ -941,14 +928,11 @@ export default function App() {
         <button
           onClick={() => {
             if (!currentUser) setIsLoginModalOpen(true);
-            else {
-              setActiveTab("meetups");
-              fetchMeetups();
-            }
+            else setIsPostReelModalOpen(true);
           }}
-          className={activeTab === "meetups" ? "text-[#f27d26]" : ""}
+          className="text-[#f27d26] font-extrabold flex items-center space-x-1"
         >
-          Trial
+          <span>+ Post Reel</span>
         </button>
       </div>
 
@@ -962,14 +946,9 @@ export default function App() {
             currentUser={currentUser}
             token={token}
             onOpenLoginModal={() => setIsLoginModalOpen(true)}
-            onRequestMeetup={(product) => {
-              if (!currentUser) {
-                setIsLoginModalOpen(true);
-                return;
-              }
-              setSelectedProduct(product);
-              setMeetupMessage(`Hey ${product.sellerName}, I watched your promo video reel for the "${product.title}" and loved the tone! Would love to request a test meetup or try-out session.`);
-              setIsMeetupModalOpen(true);
+            onPostReel={() => {
+              if (!currentUser) setIsLoginModalOpen(true);
+              else setIsPostReelModalOpen(true);
             }}
             onContactSeller={(sellerId, sellerName, product) => {
               if (!currentUser) {
@@ -1087,11 +1066,11 @@ export default function App() {
 
                 <div className="p-4 bg-white/5 rounded-xl border border-white/5 mt-auto">
                   <div className="text-[10px] text-[#f27d26] font-bold uppercase mb-1 italic flex items-center">
-                    <Shield className="w-3.5 h-3.5 mr-1" />
-                    Try Before Buy
+                    <Video className="w-3.5 h-3.5 mr-1" />
+                    Promo Reels Feed
                   </div>
                   <p className="text-[11px] text-white/50 leading-relaxed italic">
-                    Found something local? Use our integrated request meetup system on any listing to schedule a safe demo run in a studio.
+                    Have a great instrument tone? Post a video promo reel on any listing to showcase live demo tapes in the community feed!
                   </p>
                 </div>
               </aside>
@@ -1235,16 +1214,26 @@ export default function App() {
                               <span>Contact Seller (Negotiate)</span>
                             </button>
                             
-                            <button
-                              onClick={() => {
-                                if (!currentUser) setIsLoginModalOpen(true);
-                                else setIsMeetupModalOpen(true);
-                              }}
-                              className="px-4 py-3 bg-white/10 hover:bg-white/15 text-white font-extrabold rounded-xl transition-all text-xs uppercase tracking-wider flex items-center justify-center space-x-1.5 border border-white/5"
-                            >
-                              <Calendar className="w-4 h-4 text-[#f27d26]" />
-                              <span>Try Before Buy</span>
-                            </button>
+                            {selectedProduct.demoVideo ? (
+                              <button
+                                onClick={() => setActiveTab("reels")}
+                                className="px-4 py-3 bg-[#f27d26]/10 hover:bg-[#f27d26]/20 text-[#f27d26] font-extrabold rounded-xl transition-all text-xs uppercase tracking-wider flex items-center justify-center space-x-1.5 border border-[#f27d26]/30"
+                              >
+                                <Video className="w-4 h-4 text-[#f27d26]" />
+                                <span>Watch Reel</span>
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  if (!currentUser) setIsLoginModalOpen(true);
+                                  else setIsPostReelModalOpen(true);
+                                }}
+                                className="px-4 py-3 bg-white/10 hover:bg-white/15 text-white font-extrabold rounded-xl transition-all text-xs uppercase tracking-wider flex items-center justify-center space-x-1.5 border border-white/5"
+                              >
+                                <Video className="w-4 h-4 text-[#f27d26]" />
+                                <span>+ Reel Tape</span>
+                              </button>
+                            )}
                           </div>
                         )}
 
@@ -1695,10 +1684,10 @@ export default function App() {
                   <div className="p-4 bg-white/5 rounded-2xl border border-white/5 space-y-1">
                     <div className="font-bold text-white flex items-center">
                       <Check className="w-3.5 h-3.5 text-[#f27d26] mr-1.5" />
-                      Safe Try-Before-Buy
+                      Promo Reel Showcase
                     </div>
                     <p className="text-[11px] text-white/50 leading-relaxed">
-                      Arrange meetups in public places or studios so buyers can test playability safely before purchasing.
+                      Attach a short video demo tape to feature your listing prominently in the Promo Reels feed.
                     </p>
                   </div>
                 </div>
@@ -1709,7 +1698,7 @@ export default function App() {
                     PEER COMMUNITY NOTICE:
                   </div>
                   <p className="text-[11px] leading-relaxed text-white/70">
-                    Adding an Audio/Video demo tape increases listing engagement and fosters faster local meet-ups.
+                    Adding an Audio/Video demo tape increases listing engagement and fosters faster community sales.
                   </p>
                 </div>
               </div>
@@ -1832,8 +1821,8 @@ export default function App() {
                       {[
                         "Is it still available?",
                         "What is your best price?",
-                        "Can I test it?",
-                        "Where can we meetup?",
+                        "Do you have video/audio demos?",
+                        "Can you ship to my area?",
                         "Does it include cases/accessories?"
                       ].map((reply, i) => (
                         <button
@@ -1858,7 +1847,7 @@ export default function App() {
                       type="text"
                       value={newMessageText}
                       onChange={(e) => setNewMessageText(e.target.value)}
-                      placeholder="Type your message, offer, or preferred trial meetup coordinates..."
+                      placeholder="Type your message, offer, or gear question..."
                       className="flex-1 bg-[#141416] border border-white/10 rounded-xl px-4 py-3.5 text-xs text-white placeholder-white/35 focus:outline-none focus:ring-1 focus:ring-[#f27d26]"
                     />
                     <button
@@ -1880,97 +1869,7 @@ export default function App() {
           </main>
         )}
 
-        {/* VIEW 4: TRY OUT MEETUPS TRACKER */}
-        {activeTab === "meetups" && (
-          <main className="flex-1 p-8 overflow-y-auto max-w-4xl mx-auto w-full space-y-6 animate-fade-in">
-            <div>
-              <h2 className="text-2xl font-light italic tracking-tight uppercase">
-                Trial Meetup <span className="font-extrabold not-italic text-white">Requests</span>
-              </h2>
-              <p className="text-xs text-white/40 mt-1">
-                Manage requests dynamically to meet, play instruments, and verify sound tones before buy execution.
-              </p>
-            </div>
 
-            <div className="space-y-4">
-              {isLoadingProducts || isMeetupsLoading ? (
-                <div className="py-12 text-center text-white/40">Loading track schedules...</div>
-              ) : meetups.length === 0 ? (
-                <div className="py-16 text-center border border-dashed border-white/5 rounded-3xl bg-white/5">
-                  <Calendar className="w-12 h-12 text-white/10 mx-auto mb-3" />
-                  <p className="text-xs text-white/40">You have no trial coordinates registered yet.</p>
-                </div>
-              ) : (
-                meetups.map((r) => {
-                  const isIncoming = r.sellerId === currentUser?.id;
-                  return (
-                    <div
-                      key={r.id}
-                      className="bg-white/5 border border-white/10 p-5 rounded-3xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:border-white/20 transition-all"
-                    >
-                      <div className="space-y-2">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-[10px] bg-[#f27d26]/10 text-[#f27d26] px-2.5 py-0.5 rounded font-bold uppercase tracking-wider">
-                            {isIncoming ? "Incoming Shop Request" : "Your Sent Request"}
-                          </span>
-                          <span className="text-[10px] text-white/30 font-mono">ID: {r.id}</span>
-                        </div>
-                        
-                        <h4 className="text-base font-bold text-white mb-1">
-                          Instrument: <span className="text-yellow-400">{r.productTitle}</span>
-                        </h4>
-                        
-                        <p className="text-xs text-white/70 italic">
-                          &ldquo;{r.message}&rdquo;
-                        </p>
-
-                        <div className="text-[10px] text-white/40 font-mono flex items-center space-x-3 pt-1">
-                          <span>Buyer: {r.buyerName}</span>
-                          <span>•</span>
-                          <span>Seller: {r.sellerName}</span>
-                        </div>
-                      </div>
-
-                      {/* Status display or workflow trigger */}
-                      <div className="shrink-0 flex sm:flex-col items-end gap-3 w-full sm:w-auto border-t sm:border-t-0 border-white/10 pt-3 sm:pt-0">
-                        <div className="mr-auto sm:mr-0">
-                          <span className="text-[10px] text-white/30 block mb-1">CURRENT STATUS</span>
-                          <span className={`px-3 py-1 text-xs font-bold rounded uppercase ${
-                            r.status === "accepted"
-                              ? "bg-green-500/10 text-green-400 border border-green-500/20"
-                              : r.status === "declined"
-                              ? "bg-red-500/10 text-red-400 border border-red-500/20"
-                              : "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
-                          }`}>
-                            {r.status.toUpperCase()}
-                          </span>
-                        </div>
-
-                        {/* Interactive updates for incoming seller requests */}
-                        {isIncoming && r.status === "pending" && (
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => updateMeetupTracker(r.id, "accepted")}
-                              className="px-3 py-1.5 bg-green-500 text-black text-[11px] font-bold rounded-lg uppercase hover:opacity-95"
-                            >
-                              Approve
-                            </button>
-                            <button
-                              onClick={() => updateMeetupTracker(r.id, "declined")}
-                              className="px-3 py-1.5 bg-red-500/20 text-[#ff4a4a] text-[11px] font-bold rounded-lg uppercase hover:bg-red-500/30"
-                            >
-                              Decline
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </main>
-        )}
 
         {/* VIEW 5: USER PROFILE VIEW/EDIT */}
         {activeTab === "profile" && currentUser && (
@@ -2240,53 +2139,161 @@ export default function App() {
         </div>
       )}
 
-      {/* MEETUP COORDINATES SCHEDULE REQUEST MODAL */}
-      {isMeetupModalOpen && selectedProduct && (
+      {/* POST PROMO REEL MODAL */}
+      {isPostReelModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
-          <div className="bg-[#101012] border border-white/15 p-6 md:p-8 rounded-3xl max-w-sm w-full space-y-6 relative animate-fade-in shadow-2xl">
+          <div className="bg-[#101012] border border-white/15 p-6 md:p-8 rounded-3xl max-w-lg w-full space-y-5 relative animate-fade-in shadow-2xl max-h-[90vh] overflow-y-auto">
             <button
-              onClick={() => setIsMeetupModalOpen(false)}
+              onClick={() => setIsPostReelModalOpen(false)}
               className="absolute top-4 right-4 text-white/40 hover:text-white"
             >
               <X className="w-5 h-5" />
             </button>
 
             <div className="text-center">
-              <span className="text-[10px] text-[#f27d26] uppercase font-mono tracking-widest font-extrabold">
-                Try Before You Buy
+              <span className="text-[10px] text-[#f27d26] uppercase font-mono tracking-widest font-extrabold flex items-center justify-center gap-1">
+                <Video className="w-3.5 h-3.5" /> Regear Studio Loops
               </span>
               <h3 className="text-lg font-black text-white mt-1">
-                Schedule Demo Trial
+                Post a Promo Reel 🎥
               </h3>
-              <p className="text-[11px] text-white/40 mt-1 hover:underline">
-                Request a secure studio session to test this &ldquo;{selectedProduct.title}&rdquo; before closing standard trade.
+              <p className="text-[11px] text-white/40 mt-1">
+                Showcase your gear tone and performance with a short video or audio demo reel in the Reels feed!
               </p>
             </div>
 
-            <form onSubmit={requestMeetup} className="space-y-4">
+            <form onSubmit={handlePostReelSubmit} className="space-y-4">
               <div>
-                <label className="block text-[10px] uppercase tracking-wider font-bold text-white/40 mb-1.5">
-                  Message coordinates for seller
+                <label className="block text-[10px] uppercase tracking-wider font-bold text-white/50 mb-1">
+                  Instrument / Gear Name
                 </label>
-                <textarea
-                  rows={4}
+                <input
+                  type="text"
                   required
-                  value={meetupMessage}
-                  onChange={(e) => setMeetupMessage(e.target.value)}
-                  placeholder={`Hey ${selectedProduct.sellerName}, can I test this Strat on Tuesday at a local studio downtown?`}
-                  className="w-full bg-[#0a0a0b] border border-white/10 rounded-xl px-4 py-3 text-xs text-white placeholder-white/30 focus:outline-none focus:border-[#f27d26]"
+                  value={reelForm.title}
+                  onChange={(e) => setReelForm({ ...reelForm, title: e.target.value })}
+                  placeholder="e.g. 1981 Fender Stratocaster Sunburst Demo"
+                  className="w-full bg-[#0a0a0b] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white placeholder-white/30 focus:outline-none focus:border-[#f27d26]"
                 />
               </div>
 
-              <div className="bg-yellow-400/5 text-yellow-400 border border-yellow-400/10 p-3 rounded-xl text-[10px] leading-relaxed">
-                Safe trade tips: Never carry large physical cash values. Meet in verified public studios or highly frequented music stores.
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] uppercase tracking-wider font-bold text-white/50 mb-1">
+                    Category
+                  </label>
+                  <select
+                    value={reelForm.category}
+                    onChange={(e) => setReelForm({ ...reelForm, category: e.target.value })}
+                    className="w-full bg-[#0a0a0b] border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-[#f27d26]"
+                  >
+                    {CATEGORIES.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] uppercase tracking-wider font-bold text-white/50 mb-1">
+                    Price ($)
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    value={reelForm.price}
+                    onChange={(e) => setReelForm({ ...reelForm, price: e.target.value })}
+                    placeholder="1250"
+                    className="w-full bg-[#0a0a0b] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white placeholder-white/30 focus:outline-none focus:border-[#f27d26]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] uppercase tracking-wider font-bold text-white/50 mb-1">
+                  Reel Video / MP4 URL
+                </label>
+                <input
+                  type="url"
+                  required
+                  value={reelForm.videoUrl}
+                  onChange={(e) => setReelForm({ ...reelForm, videoUrl: e.target.value })}
+                  placeholder="https://assets.mixkit.co/videos/preview/..."
+                  className="w-full bg-[#0a0a0b] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white placeholder-white/30 focus:outline-none focus:border-[#f27d26]"
+                />
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  <span className="text-[9px] text-white/30 self-center mr-1">Presets:</span>
+                  <button
+                    type="button"
+                    onClick={() => setReelForm({ ...reelForm, videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-hand-of-a-guitarist-playing-acoustic-guitar-43405-large.mp4", category: "Guitars" })}
+                    className="text-[9px] bg-white/5 hover:bg-white/10 px-2 py-1 rounded text-white/70"
+                  >
+                    🎸 Acoustic
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReelForm({ ...reelForm, videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-hands-playing-the-keys-of-a-synthesizer-41584-large.mp4", category: "Keyboards" })}
+                    className="text-[9px] bg-white/5 hover:bg-white/10 px-2 py-1 rounded text-white/70"
+                  >
+                    🎹 Synth
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReelForm({ ...reelForm, videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-playing-a-drum-set-in-a-studio-41586-large.mp4", category: "Other" })}
+                    className="text-[9px] bg-white/5 hover:bg-white/10 px-2 py-1 rounded text-white/70"
+                  >
+                    🥁 Drum
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReelForm({ ...reelForm, videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-musician-playing-electric-guitar-on-stage-41585-large.mp4", category: "Guitars" })}
+                    className="text-[9px] bg-white/5 hover:bg-white/10 px-2 py-1 rounded text-white/70"
+                  >
+                    ⚡ Electric
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] uppercase tracking-wider font-bold text-white/50 mb-1">
+                  Cover Image Photo URL
+                </label>
+                <input
+                  type="url"
+                  value={reelForm.imageUrl}
+                  onChange={(e) => setReelForm({ ...reelForm, imageUrl: e.target.value })}
+                  placeholder="https://images.unsplash.com/photo-1511192336575-5a79af67a629..."
+                  className="w-full bg-[#0a0a0b] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white placeholder-white/30 focus:outline-none focus:border-[#f27d26]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] uppercase tracking-wider font-bold text-white/50 mb-1">
+                  Reel Notes / Tone Highlights
+                </label>
+                <textarea
+                  rows={2}
+                  value={reelForm.description}
+                  onChange={(e) => setReelForm({ ...reelForm, description: e.target.value })}
+                  placeholder="Hear the rich tube distortion and sweet sustain in this demo tape!"
+                  className="w-full bg-[#0a0a0b] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white placeholder-white/30 focus:outline-none focus:border-[#f27d26]"
+                />
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3 bg-[#f27d26] text-black font-extrabold rounded-xl text-xs uppercase tracking-wider hover:opacity-95 transition-all"
+                disabled={isPostingReelLoading}
+                className="w-full py-3 bg-[#f27d26] text-black font-extrabold rounded-xl text-xs uppercase tracking-wider hover:opacity-95 transition-all flex items-center justify-center space-x-2"
               >
-                Send Try-Out Request
+                {isPostingReelLoading ? (
+                  <span>Publishing Reel...</span>
+                ) : (
+                  <>
+                    <Play className="w-4 h-4 fill-black" />
+                    <span>Publish Reel to Feed 🎥</span>
+                  </>
+                )}
               </button>
             </form>
           </div>

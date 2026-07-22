@@ -27,7 +27,7 @@ interface PromoReelsProps {
   currentUser: User | null;
   token: string | null;
   onOpenLoginModal: () => void;
-  onRequestMeetup: (product: Product) => void;
+  onPostReel?: () => void;
   onContactSeller: (sellerId: string, sellerName: string, product?: Product) => void;
   onViewDetails: (product: Product) => void;
 }
@@ -280,7 +280,7 @@ export default function PromoReels({
   currentUser,
   token,
   onOpenLoginModal,
-  onRequestMeetup,
+  onPostReel,
   onContactSeller,
   onViewDetails,
 }: PromoReelsProps) {
@@ -530,6 +530,17 @@ export default function PromoReels({
             Browse verified community instrument promotions. Double-tap to show support, listen to dynamic audio chord progressions, and comment in real-time.
           </p>
 
+          {/* POST REEL OPTION BUTTON */}
+          {onPostReel && (
+            <button
+              onClick={onPostReel}
+              className="w-full py-3 bg-[#f27d26] text-black font-extrabold rounded-2xl text-xs uppercase tracking-wider hover:opacity-90 shadow-lg shadow-[#f27d26]/15 transition-all flex items-center justify-center space-x-2"
+            >
+              <Play className="w-4 h-4 fill-black" />
+              <span>+ Post a Promo Reel</span>
+            </button>
+          )}
+
           {/* CATEGORIES CHIPS FILTER FOR COZY DISCOVERY */}
           <div className="pt-2">
             <span className="text-[9px] uppercase font-mono text-white/40 block mb-2">
@@ -591,7 +602,15 @@ export default function PromoReels({
       <div className="relative flex flex-col items-center">
         
         {/* Mobile/Tablet categories quick picker overlay */}
-        <div className="flex overflow-x-auto gap-2 max-w-[340px] md:hidden pb-4 scrollbar-none">
+        <div className="flex items-center space-x-2 max-w-[360px] md:hidden pb-4 overflow-x-auto scrollbar-none">
+          {onPostReel && (
+            <button
+              onClick={onPostReel}
+              className="px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#f27d26] text-black shrink-0 flex items-center space-x-1"
+            >
+              <span>+ Post Reel</span>
+            </button>
+          )}
           {categories.map((cat) => (
             <button
               key={cat}
@@ -874,23 +893,6 @@ export default function PromoReels({
                           </button>
                           <span className="text-[10px] font-mono text-white/80 mt-1 font-bold">
                             Q&A
-                          </span>
-                        </div>
-
-                        {/* TRY-OUT SCHEDULE COORDINATE TRIGGER */}
-                        <div className="flex flex-col items-center">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onRequestMeetup(prod);
-                            }}
-                            title="Try Before Buy Demo"
-                            className="w-11 h-11 rounded-full bg-black/55 border border-white/10 flex items-center justify-center text-white hover:text-yellow-400 transition-all hover:scale-105 shadow-lg"
-                          >
-                            <Calendar className="w-5 h-5 text-[#f27d26]" />
-                          </button>
-                          <span className="text-[9px] font-bold text-[#f27d26] uppercase tracking-tighter mt-1 font-mono">
-                            Try Out
                           </span>
                         </div>
 

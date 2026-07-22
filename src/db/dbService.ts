@@ -1,7 +1,7 @@
 // src/db/dbService.ts
 import fs from "fs";
 import path from "path";
-import { User, Product, Review, Message, MeetupRequest, Comment } from "../types";
+import { User, Product, Review, Message, Comment } from "../types";
 
 const DB_DIR = path.join(process.cwd(), "src", "db");
 const DB_FILE = path.join(DB_DIR, "db.json");
@@ -11,7 +11,6 @@ interface DBStructure {
   products: Product[];
   reviews: Review[];
   messages: Message[];
-  meetupRequests: MeetupRequest[];
   comments: Comment[];
 }
 
@@ -191,21 +190,6 @@ const DEFAULT_MESSAGES: Message[] = [
   }
 ];
 
-const DEFAULT_MEETUPS: MeetupRequest[] = [
-  {
-    id: "meet-1",
-    productId: "prod-strat",
-    productTitle: "1978 Fender Stratocaster Vintage Sunburst",
-    buyerId: "buyer-david",
-    buyerName: "DavidSustain",
-    sellerId: "seller-jimi",
-    sellerName: "JimiToneMaster",
-    message: "I'd love to try it out on an amp. Would you be open for a quick demo at a local studio next Tuesday afternoon?",
-    status: "accepted",
-    createdAt: new Date("2026-06-06T14:00:00Z").toISOString(),
-  }
-];
-
 const DEFAULT_COMMENTS: Comment[] = [
   {
     id: "com-1",
@@ -233,7 +217,6 @@ class DatabaseService {
     products: [],
     reviews: [],
     messages: [],
-    meetupRequests: [],
     comments: [],
   };
 
@@ -257,7 +240,6 @@ class DatabaseService {
           products: [...DEFAULT_PRODUCTS],
           reviews: [...DEFAULT_REVIEWS],
           messages: [...DEFAULT_MESSAGES],
-          meetupRequests: [...DEFAULT_MEETUPS],
           comments: [...DEFAULT_COMMENTS],
         };
         this.save();
@@ -269,7 +251,6 @@ class DatabaseService {
         products: [...DEFAULT_PRODUCTS],
         reviews: [...DEFAULT_REVIEWS],
         messages: [...DEFAULT_MESSAGES],
-        meetupRequests: [...DEFAULT_MEETUPS],
         comments: [...DEFAULT_COMMENTS],
       };
     }
@@ -426,25 +407,6 @@ class DatabaseService {
     this.data.comments.push(comment);
     this.save();
     return comment;
-  }
-
-  // --- Meetup Requests ---
-  getMeetupsByUser(userId: string): MeetupRequest[] {
-    return this.data.meetupRequests.filter((r) => r.buyerId === userId || r.sellerId === userId);
-  }
-
-  addMeetupRequest(req: MeetupRequest): MeetupRequest {
-    this.data.meetupRequests.push(req);
-    this.save();
-    return req;
-  }
-
-  updateMeetupRequestStatus(id: string, status: "accepted" | "declined"): MeetupRequest | undefined {
-    const idx = this.data.meetupRequests.findIndex((r) => r.id === id);
-    if (idx === -1) return undefined;
-    this.data.meetupRequests[idx].status = status;
-    this.save();
-    return this.data.meetupRequests[idx];
   }
 }
 

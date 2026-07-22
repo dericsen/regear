@@ -2,7 +2,7 @@
 import express, { Request, Response, NextFunction } from "express";
 import path from "path";
 import { db } from "./src/db/dbService.js";
-import { User, Product, Review, Message, MeetupRequest, Comment } from "./src/types.js";
+import { User, Product, Review, Message, Comment } from "./src/types.js";
 
 // Express type augmentation for authenticated requests
 declare global {
@@ -268,37 +268,6 @@ const PORT = 3000;
     res.status(201).json(comment);
   });
 
-  // 4. MEETUP REQUESTS (TRY BEFORE YOU BUY)
-  app.post("/api/products/:id/meetup", authMiddleware, (req: Request, res: Response) => {
-    if (!req.user) return res.status(401).json({ error: "Unauthorized" });
-    const { message } = req.body;
-    
-    const prod = db.getProduct(req.params.id);
-    if (!prod) {
-      return res.status(404).json({ error: "Product gear not found" });
-    }
-
-    if (prod.sellerId === req.user.id) {
-      return res.status(400).json({ error: "You cannot request a try-out on your own gear listing" });
-    }
-
-    const meetup: MeetupRequest = {
-      id: "meet-" + Math.random().toString(36).substring(2, 9),
-      productId: prod.id,
-      productTitle: prod.title,
-      buyerId: req.user.id,
-      buyerName: req.user.username,
-      sellerId: prod.sellerId,
-      sellerName: prod.sellerName,
-      message: message || `Hey ${prod.sellerName}, I'm interested in trying out this ${prod.title}. Would love to request a test meetup.`,
-      status: "pending",
-      createdAt: new Date().toISOString(),
-    };
-
-    db.addMeetupRequest(meetup);
-    res.status(201).json(meetup);
-  });
-
   // 5. SELLER RATINGS & REVIEWS
   app.post("/api/products/:id/reviews", authMiddleware, (req: Request, res: Response) => {
     if (!req.user) return res.status(401).json({ error: "Unauthorized" });
@@ -416,42 +385,6 @@ const PORT = 3000;
     }
 
     res.json({ user: updated });
-  });
-
-  // 9. MEETUP REQUESTS FOR AUTH USER
-  app.get("/api/meetups", authMiddleware, (req: Request, res: Response) => {
-    if (!req.user) return res.status(401).json({ error: "Unauthorized" });
-    res.json(db.getMeetupsByUser(req.user.id));
-  });
-
-  app.patch("/api/meetups/:id/status", authMiddleware, (req: Request, res: Response) => {
-    if (!req.user) return res.status(401).json({ error: "Unauthorized" });
-    const { status } = req.body;
-
-    if (status !== "accepted" && status !== "declined") {
-      return res.status(400).json({ error: "Status must be 'accepted' or 'declined'" });
-    }
-
-    const updated = db.updateMeetupRequestStatus(req.params.id, status);
-    if (!updated) {
-      return res.status(404).json({ error: "Meetup request tracker not found" });
-    }
-
-    // Generate automatic notification message in chat!
-    const directionStr = status === "accepted" ? "APPROVED" : "DECLINED";
-    const automsg: Message = {
-      id: "msg-auto-" + Math.random().toString(36).substring(2, 9),
-      senderId: req.user.id,
-      senderName: req.user.username,
-      receiverId: req.user.id === updated.buyerId ? updated.sellerId : updated.buyerId,
-      receiverName: req.user.id === updated.buyerId ? updated.sellerName : updated.buyerName,
-      productId: updated.productId,
-      content: `[Meetup Automation] Meetup trial request for "${updated.productTitle}" has been ${directionStr} by ${req.user.username}.`,
-      createdAt: new Date().toISOString(),
-    };
-    db.addMessage(automsg);
-
-    res.json(updated);
   });
 
   // --- Vite Dev Server Middleware Integration ---
