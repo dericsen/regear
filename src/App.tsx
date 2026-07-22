@@ -769,7 +769,7 @@ export default function App() {
               }`}
             >
               <Video className="w-3.5 h-3.5 text-[#f27d26]" />
-              <span>Gear Reels 🎥</span>
+              <span>Gear Reels</span>
             </button>
             <button
               onClick={() => {
@@ -2155,7 +2155,7 @@ export default function App() {
                 <Video className="w-3.5 h-3.5" /> Regear Studio Loops
               </span>
               <h3 className="text-lg font-black text-white mt-1">
-                Post a Promo Reel 🎥
+                Post a Promo Reel 
               </h3>
               <p className="text-[11px] text-white/40 mt-1">
                 Showcase your gear tone and performance with a short video or audio demo reel in the Reels feed!
@@ -2291,7 +2291,7 @@ export default function App() {
                 ) : (
                   <>
                     <Play className="w-4 h-4 fill-black" />
-                    <span>Publish Reel to Feed 🎥</span>
+                    <span>Publish Reel to Feed </span>
                   </>
                 )}
               </button>
