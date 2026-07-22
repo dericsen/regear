@@ -2,7 +2,6 @@
 import express, { Request, Response, NextFunction } from "express";
 import path from "path";
 import { db } from "./src/db/dbService.js";
-import { getSmartPriceSuggestions, analyzeGearAuthenticity } from "./src/services/aiService.js";
 import { User, Product, Review, Message, MeetupRequest, Comment } from "./src/types.js";
 
 // Express type augmentation for authenticated requests
@@ -148,21 +147,6 @@ const PORT = 3000;
     res.json(list);
   });
 
-  app.get("/api/products/smart-price", async (req: Request, res: Response) => {
-    const { title, category, condition, description } = req.query;
-    try {
-      const suggestions = await getSmartPriceSuggestions(
-        (category as string) || "Guitars",
-        (condition as string) || "Used",
-        (title as string) || "Instrument",
-        (description as string) || ""
-      );
-      res.json(suggestions);
-    } catch (err: any) {
-      res.status(500).json({ error: err.message || "Failed to calculate suggestions" });
-    }
-  });
-
   app.get("/api/products/:id", (req: Request, res: Response) => {
     const prod = db.getProduct(req.params.id);
     if (!prod) {
@@ -182,22 +166,6 @@ const PORT = 3000;
 
     const priceNum = parseFloat(price);
 
-    // Call AI Pricing Suggestions for metadata record
-    let smartMin = priceNum * 0.9;
-    let smartMax = priceNum * 1.1;
-    try {
-      const result = await getSmartPriceSuggestions(category, condition, title, description);
-      smartMin = result.min;
-      smartMax = result.max;
-    } catch (_) {}
-
-    // Call AI For Fake Detection review
-    let score = 95;
-    try {
-      const check = await analyzeGearAuthenticity(title, description, priceNum);
-      score = check.score;
-    } catch (_) {}
-
     const newProduct: Product = {
       id: "prod-" + Math.random().toString(36).substring(2, 9),
       title,
@@ -211,10 +179,6 @@ const PORT = 3000;
       sellerName: req.user.username,
       sellerVerified: req.user.isVerified,
       sellerRating: req.user.rating,
-      isVerifiedGear: score >= 75,
-      verificationScore: score,
-      suggestedPriceMin: smartMin,
-      suggestedPriceMax: smartMax,
       createdAt: new Date().toISOString(),
     };
 
@@ -243,22 +207,6 @@ const PORT = 3000;
 
     const priceNum = parseFloat(price);
 
-    // Call AI Pricing Suggestions for metadata record
-    let smartMin = priceNum * 0.9;
-    let smartMax = priceNum * 1.1;
-    try {
-      const result = await getSmartPriceSuggestions(category, condition, title, description);
-      smartMin = result.min;
-      smartMax = result.max;
-    } catch (_) {}
-
-    // Call AI For Fake Detection review
-    let score = prod.verificationScore;
-    try {
-      const check = await analyzeGearAuthenticity(title, description, priceNum);
-      score = check.score;
-    } catch (_) {}
-
     const updated = db.updateProduct(prod.id, {
       title,
       description,
@@ -267,10 +215,6 @@ const PORT = 3000;
       category,
       images: Array.isArray(images) && images.length > 0 ? images : ["https://images.unsplash.com/photo-1511192336575-5a79af67a629?q=80&w=1000&auto=format&fit=crop"],
       demoVideo: demoVideo || "",
-      isVerifiedGear: score >= 75,
-      verificationScore: score,
-      suggestedPriceMin: smartMin,
-      suggestedPriceMax: smartMax,
     });
 
     res.json(updated);
@@ -509,18 +453,6 @@ const PORT = 3000;
 
     res.json(updated);
   });
-
-  // AI-BASED INSTRUMENT VERIFICATION SIMULATOR & TESTING
-  app.post("/api/ai/verify-gear", async (req: Request, res: Response) => {
-    const { title, description, price } = req.body;
-    try {
-      const result = await analyzeGearAuthenticity(title || "", description || "", parseFloat(price) || 0);
-      res.json(result);
-    } catch (err: any) {
-      res.status(500).json({ error: err.message || "Failed screening" });
-    }
-  });
-
 
   // --- Vite Dev Server Middleware Integration ---
   // On Vercel, static files are served natively via CDN, so this fallback is reserved for dev/local.

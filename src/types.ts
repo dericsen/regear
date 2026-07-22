@@ -32,8 +32,8 @@ export interface Product {
   sellerName: string;
   sellerVerified: boolean;
   sellerRating: number;
-  isVerifiedGear: boolean; // AI-based verification
-  verificationScore?: number; // AI confidence score, e.g., 94%
+  isVerifiedGear?: boolean;
+  verificationScore?: number;
   suggestedPriceMin?: number;
   suggestedPriceMax?: number;
   createdAt: string;

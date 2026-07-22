@@ -32,6 +32,7 @@ import {
   Edit,
   Trash2,
   Video,
+  Zap,
 } from "lucide-react";
 import { User, Product, Comment, Message, MeetupRequest, Review } from "./types";
 import PromoReels from "./components/PromoReels";
@@ -88,9 +89,6 @@ export default function App() {
     imageUrl: "",
     demoUrl: "",
   });
-  const [isAIPriceCalculating, setIsAIPriceCalculating] = useState(false);
-  const [aiPriceRange, setAiPriceRange] = useState<{ min: number; max: number; tip: string } | null>(null);
-  const [aiAuthenticityCheck, setAiAuthenticityCheck] = useState<{ score: number; reasoning: string } | null>(null);
   const [isSellingLoading, setIsSellingLoading] = useState(false);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
 
@@ -125,9 +123,6 @@ export default function App() {
     if (savedToken && savedUser) {
       setToken(savedToken);
       setCurrentUser(JSON.parse(savedUser));
-    } else {
-      // Direct auto-login as David the buyer for stellar frictionless initial loading experience
-      handleInstantLogin("DavidSustain");
     }
   }, []);
 
@@ -360,57 +355,6 @@ export default function App() {
     }
   };
 
-  // --- Real-time Price Suggestions on list input ---
-  const getAIPriceMeter = async () => {
-    if (!newGear.title || !newGear.category) return;
-    setIsAIPriceCalculating(true);
-    setAiPriceRange(null);
-    setAiAuthenticityCheck(null);
-    try {
-      // 1. Get prices
-      const q = new URLSearchParams({
-        title: newGear.title,
-        category: newGear.category,
-        condition: newGear.condition,
-        description: newGear.description,
-      });
-      const res1 = await fetch(`/api/products/smart-price?${q.toString()}`);
-      if (res1.ok) {
-        const data1 = await res1.json();
-        setAiPriceRange(data1);
-      }
-
-      // 2. Run automatic counterfeit scan simulation
-      const res2 = await fetch("/api/ai/verify-gear", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: newGear.title,
-          description: newGear.description,
-          price: newGear.price || "300",
-        }),
-      });
-      if (res2.ok) {
-        const data2 = await res2.json();
-        setAiAuthenticityCheck(data2);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsAIPriceCalculating(false);
-    }
-  };
-
-  // Trigger preview analysis whenever price, title, or category changes slightly
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (newGear.title && activeTab === "sell") {
-        getAIPriceMeter();
-      }
-    }, 1200);
-    return () => clearTimeout(timer);
-  }, [newGear.title, newGear.category, newGear.condition, activeTab]);
-
   const handleSellGear = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser) {
@@ -454,8 +398,6 @@ export default function App() {
             imageUrl: "",
             demoUrl: "",
           });
-          setAiPriceRange(null);
-          setAiAuthenticityCheck(null);
           setSelectedProduct(updated);
           setActiveTab("marketplace");
           fetchProducts();
@@ -484,7 +426,7 @@ export default function App() {
       });
       if (res.ok) {
         const added = await res.json();
-        showSuccessTip(`Listing "${added.title}" uploaded! Verified authenticity scan rating: ${added.verificationScore}%`);
+        showSuccessTip(`Listing "${added.title}" uploaded successfully!`);
         setNewGear({
           title: "",
           description: "",
@@ -494,8 +436,6 @@ export default function App() {
           imageUrl: "",
           demoUrl: "",
         });
-        setAiPriceRange(null);
-        setAiAuthenticityCheck(null);
         setActiveTab("marketplace");
         fetchProducts();
       } else {
@@ -755,15 +695,6 @@ export default function App() {
       imageUrl: prod.images[0] || "",
       demoUrl: prod.demoVideo || "",
     });
-    setAiPriceRange({
-      min: prod.suggestedPriceMin || Math.round(prod.price * 0.9),
-      max: prod.suggestedPriceMax || Math.round(prod.price * 1.1),
-      tip: "Listing details are loaded. Adjust specs to view live market suggested prices."
-    });
-    setAiAuthenticityCheck({
-      score: prod.verificationScore || 95,
-      reasoning: "Reviewing active product editing authenticity screening profile."
-    });
     setActiveTab("sell");
   };
 
@@ -854,7 +785,6 @@ export default function App() {
                 if (!currentUser) setIsLoginModalOpen(true);
                 else {
                   setActiveTab("sell");
-                  setAiPriceRange(null);
                 }
               }}
               className={`pb-1 transition-all hover:text-white ${
@@ -1196,14 +1126,7 @@ export default function App() {
                           {selectedProduct.category}
                         </span>
                         
-                        {/* Authentic Gear Trust Badges */}
-                        {selectedProduct.isVerifiedGear && (
-                          <div className="absolute top-3 right-3 bg-green-500 text-black px-2.5 py-1 rounded-full text-[9px] font-extrabold uppercase tracking-widest flex items-center space-x-1 shadow-md">
-                            <BadgeCheck className="w-3 h-3" />
-                            <span>Verified Authentic</span>
-                          </div>
-                        )}
-                      </div>
+                        </div>
 
                       {/* Video Demotape playback section */}
                       {selectedProduct.demoVideo ? (
@@ -1236,11 +1159,11 @@ export default function App() {
                               ) : (
                                 <>
                                   <Play className="w-3.5 h-3.5 text-green-400" />
-                                  <span>Simulate Audio Demo Tape</span>
+                                  <span>Play Audio Demo Tape</span>
                                 </>
                               )}
                             </button>
-                            <span className="text-[11px] text-white/30 italic">Synthetic instrument signature verified</span>
+                            <span className="text-[11px] text-white/30 italic">Audio demo player</span>
                           </div>
                           
                           {/* Simple video player */}
@@ -1272,36 +1195,6 @@ export default function App() {
                             <span className="text-[10px] bg-white/10 px-2.5 py-1 rounded text-white/80 font-bold tracking-wider uppercase block mt-1">
                               {selectedProduct.condition}
                             </span>
-                          </div>
-                        </div>
-
-                        {/* Interactive AI pricing breakdown */}
-                        <div className="bg-gradient-to-br from-[#121214] to-[#0a0a0b] border border-[#f27d26]/20 p-4 rounded-xl space-y-2.5 my-4">
-                          <div className="flex justify-between items-center">
-                            <span className="text-[10px] uppercase tracking-widest text-[#f27d26] font-bold flex items-center">
-                              <Sparkles className="w-3.5 h-3.5 mr-1" />
-                              AI Assistant Price Guidance
-                            </span>
-                            <span className="text-[10px] bg-green-500/10 text-green-400 px-2 py-0.5 rounded font-mono font-bold uppercase">
-                              FAIR VALUE METRIC
-                            </span>
-                          </div>
-                          
-                          <p className="text-[11px] text-white/70">
-                            Current listing is <span className="text-white font-bold">${selectedProduct.price}</span>. Smart suggestions estimate this {selectedProduct.category} condition value between:
-                          </p>
-                          <div className="flex justify-between items-center text-xs font-mono font-bold text-white py-1 border-y border-white/5">
-                            <span>Suggestion Min: ${selectedProduct.suggestedPriceMin || Math.round(selectedProduct.price * 0.9)}</span>
-                            <span>Suggestion Max: ${selectedProduct.suggestedPriceMax || Math.round(selectedProduct.price * 1.1)}</span>
-                          </div>
-                          
-                          <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden relative">
-                            <div className="absolute top-0 bottom-0 bg-[#f27d26] rounded-full left-[20%] right-[30%]"></div>
-                          </div>
-                          <div className="flex justify-between text-[9px] text-white/40 font-mono">
-                            <span>Underpriced</span>
-                            <span className="text-green-400 font-bold uppercase">Target Zone</span>
-                            <span>Overpriced</span>
                           </div>
                         </div>
 
@@ -1614,7 +1507,7 @@ export default function App() {
               <p className="text-xs text-white/40 mt-1">
                 {editingProductId
                   ? "Modify your gear listing title, pricing, image, or demo tape path below."
-                  : "Calculate smart suggested pricing on-demand, scan authenticity, and load a Trust demo-tape."}
+                  : "List your instrument details, upload photos, and attach an audio demo tape for potential buyers."}
               </p>
             </div>
 
@@ -1757,8 +1650,6 @@ export default function App() {
                         imageUrl: "",
                         demoUrl: "",
                       });
-                      setAiPriceRange(null);
-                      setAiAuthenticityCheck(null);
                       setActiveTab("marketplace");
                     }}
                     className="w-full py-2.5 bg-white/5 border border-white/10 hover:bg-white/10 text-white/70 hover:text-white font-bold rounded-xl transition-all text-xs uppercase tracking-wider mt-2"
@@ -1768,86 +1659,59 @@ export default function App() {
                 )}
               </form>
 
-              {/* Right Column: AI Assistant suggestions display */}
+              {/* Right Column: Seller Guidelines */}
               <div className="bg-[#101012] border border-white/10 p-6 rounded-3xl space-y-6">
                 <div>
                   <span className="text-[10px] text-[#f27d26] uppercase font-mono tracking-widest font-bold">
-                    Regear Engine
+                    Seller Guide
                   </span>
                   <h3 className="text-base font-bold text-white flex items-center mt-1">
-                    <Sparkles className="w-4 h-4 text-[#f27d26] mr-1.5" />
-                    AI Pricing Guide Scanner
+                    <Shield className="w-4 h-4 text-[#f27d26] mr-1.5" />
+                    Marketplace Best Practices
                   </h3>
                 </div>
 
-                {isAIPriceCalculating ? (
-                  <div className="py-12 text-center space-y-2">
-                    <RefreshCw className="w-8 h-8 text-[#f27d26] animate-spin mx-auto animate-pulse" />
-                    <p className="text-xs text-white/50">Analyzing vintage markets and conditions...</p>
-                  </div>
-                ) : aiPriceRange ? (
-                  <div className="space-y-4 animate-fade-in">
-                    <div className="bg-white/5 p-4 rounded-2xl border border-[#f27d26]/10">
-                      <span className="text-[10px] text-white/40 uppercase tracking-wider block mb-1">
-                        ESTIMATED MARKET RANGE
-                      </span>
-                      <div className="text-xl font-mono font-bold text-[#f27d26]">
-                        ${aiPriceRange.min} – ${aiPriceRange.max}
-                      </div>
-                      <p className="text-xs text-white/50 italic mt-2 leading-relaxed">
-                        &quot;{aiPriceRange.tip}&quot;
-                      </p>
+                <div className="space-y-4 text-xs text-white/70">
+                  <div className="p-4 bg-white/5 rounded-2xl border border-white/5 space-y-1">
+                    <div className="font-bold text-white flex items-center">
+                      <Check className="w-3.5 h-3.5 text-[#f27d26] mr-1.5" />
+                      Detailed Descriptions
                     </div>
-
-                    {aiAuthenticityCheck && (
-                      <div className="bg-white/5 p-4 rounded-2xl border border-white/5 space-y-2">
-                        <div className="flex justify-between items-center">
-                          <span className="text-[10px] text-white/40 uppercase tracking-wider block">
-                            AUTHENTICITY PROBABILITY
-                          </span>
-                          <span
-                            className={`text-xs font-bold px-2 py-0.5 rounded font-mono ${
-                              aiAuthenticityCheck.score >= 80 ? "bg-green-500/10 text-green-400" : "bg-yellow-500/10 text-yellow-400"
-                            }`}
-                          >
-                            {aiAuthenticityCheck.score}% Secure
-                          </span>
-                        </div>
-
-                        {/* Confidence Meter bar */}
-                        <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all duration-300 ${
-                              aiAuthenticityCheck.score >= 80 ? "bg-green-500" : "bg-yellow-500"
-                            }`}
-                            style={{ width: `${aiAuthenticityCheck.score}%` }}
-                          ></div>
-                        </div>
-
-                        <p className="text-[11px] text-white/55 italic">
-                          Scanner assessment: {aiAuthenticityCheck.reasoning}
-                        </p>
-                      </div>
-                    )}
-
-                    <div className="p-3.5 bg-yellow-400/5 text-yellow-400 border border-yellow-400/10 rounded-xl text-xs space-y-1">
-                      <div className="font-extrabold flex items-center">
-                        <AlertTriangle className="w-3.5 h-3.5 mr-1" />
-                        PEER COMMUNITY NOTICE:
-                      </div>
-                      <p className="text-[11px] leading-relaxed text-white/70">
-                        Adding an Audio/Video demo tape increases listing credibility scores by over 45%, fostering faster meet-ups.
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="py-12 border border-dashed border-white/5 rounded-2xl text-center text-white/30 space-y-3">
-                    <Guitar className="w-12 h-12 text-white/10 mx-auto" />
-                    <p className="text-xs max-w-xs mx-auto">
-                      Pricing and fraud scanners generate live predictions once you input an instrument title.
+                    <p className="text-[11px] text-white/50 leading-relaxed">
+                      Include serial numbers, year of manufacture, modifications, and any cosmetic or functional wear.
                     </p>
                   </div>
-                )}
+
+                  <div className="p-4 bg-white/5 rounded-2xl border border-white/5 space-y-1">
+                    <div className="font-bold text-white flex items-center">
+                      <Check className="w-3.5 h-3.5 text-[#f27d26] mr-1.5" />
+                      Attach Audio / Video Demos
+                    </div>
+                    <p className="text-[11px] text-white/50 leading-relaxed">
+                      Listings with sound clips or video demos sell significantly faster and build instant buyer trust.
+                    </p>
+                  </div>
+
+                  <div className="p-4 bg-white/5 rounded-2xl border border-white/5 space-y-1">
+                    <div className="font-bold text-white flex items-center">
+                      <Check className="w-3.5 h-3.5 text-[#f27d26] mr-1.5" />
+                      Safe Try-Before-Buy
+                    </div>
+                    <p className="text-[11px] text-white/50 leading-relaxed">
+                      Arrange meetups in public places or studios so buyers can test playability safely before purchasing.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-3.5 bg-yellow-400/5 text-yellow-400 border border-yellow-400/10 rounded-xl text-xs space-y-1">
+                  <div className="font-extrabold flex items-center">
+                    <AlertTriangle className="w-3.5 h-3.5 mr-1" />
+                    PEER COMMUNITY NOTICE:
+                  </div>
+                  <p className="text-[11px] leading-relaxed text-white/70">
+                    Adding an Audio/Video demo tape increases listing engagement and fosters faster local meet-ups.
+                  </p>
+                </div>
               </div>
             </div>
           </main>
@@ -1959,7 +1823,7 @@ export default function App() {
                   {/* Quick-Reply Chips */}
                   <div className="flex flex-col space-y-1.5 pb-2.5 pt-2 border-t border-white/5">
                     <div className="flex items-center space-x-1.5 px-1">
-                      <Sparkles className="w-3 h-3 text-[#f27d26]" />
+                      <Zap className="w-3 h-3 text-[#f27d26]" />
                       <span className="text-[10px] uppercase tracking-wider text-white/40 font-mono font-bold">
                         Quick Replies
                       </span>
