@@ -778,7 +778,7 @@ export default function App() {
               }`}
             >
               <Video className="w-3.5 h-3.5 text-[#f27d26]" />
-              <span>Gear Reels 🎥</span>
+              <span>Gear Reels</span>
             </button>
             <button
               onClick={() => {
