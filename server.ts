@@ -118,11 +118,11 @@ const PORT = 3000;
   app.get("/api/products", (req: Request, res: Response) => {
     let list = db.getProducts();
 
-    const { category, condition, search, minPrice, maxPrice } = req.query;
+    const { category, condition, search, minPrice, maxPrice, listingType, aiVerified } = req.query;
 
     if (search) {
       const q = (search as string).toLowerCase();
-      list = list.filter((p) => p.title.toLowerCase().includes(q) || p.description.toLowerCase().includes(q));
+      list = list.filter((p) => p.title.toLowerCase().includes(q) || p.description.toLowerCase().includes(q) || (p.brand && p.brand.toLowerCase().includes(q)));
     }
 
     if (category && category !== "all") {
@@ -131,6 +131,14 @@ const PORT = 3000;
 
     if (condition && condition !== "all") {
       list = list.filter((p) => p.condition.toLowerCase() === (condition as string).toLowerCase());
+    }
+
+    if (listingType && listingType !== "all") {
+      list = list.filter((p) => p.listingType === listingType || p.listingType === "both" || (!p.listingType && listingType === "buy"));
+    }
+
+    if (aiVerified === "true") {
+      list = list.filter((p) => p.isVerifiedGear === true);
     }
 
     if (minPrice) {
@@ -158,13 +166,14 @@ const PORT = 3000;
   app.post("/api/products", authMiddleware, async (req: Request, res: Response) => {
     if (!req.user) return res.status(401).json({ error: "Unauthorized" });
 
-    const { title, description, price, condition, category, images, demoVideo } = req.body;
+    const { title, description, price, condition, category, images, demoVideo, listingType, rentPriceMonthly, brand } = req.body;
 
     if (!title || !description || !price || !condition || !category) {
       return res.status(400).json({ error: "All gear listing fields are required" });
     }
 
     const priceNum = parseFloat(price);
+    const rentMonthlyNum = rentPriceMonthly ? parseFloat(rentPriceMonthly) : Math.round(priceNum * 0.025);
 
     const newProduct: Product = {
       id: "prod-" + Math.random().toString(36).substring(2, 9),
@@ -179,6 +188,14 @@ const PORT = 3000;
       sellerName: req.user.username,
       sellerVerified: req.user.isVerified,
       sellerRating: req.user.rating,
+      listingType: listingType || "buy",
+      rentPriceMonthly: rentMonthlyNum,
+      brand: brand || title.split(" ")[0] || "Custom",
+      isVerifiedGear: true,
+      verificationScore: 95,
+      rating: 5.0,
+      reviewCount: 1,
+      co2SavedKg: Math.round(priceNum * 0.04) + 15,
       createdAt: new Date().toISOString(),
     };
 
@@ -199,7 +216,7 @@ const PORT = 3000;
       return res.status(403).json({ error: "You are not authorized to update this listing" });
     }
 
-    const { title, description, price, condition, category, images, demoVideo } = req.body;
+    const { title, description, price, condition, category, images, demoVideo, listingType, rentPriceMonthly, brand } = req.body;
 
     if (!title || !description || !price || !condition || !category) {
       return res.status(400).json({ error: "All gear listing fields are required" });
@@ -215,6 +232,9 @@ const PORT = 3000;
       category,
       images: Array.isArray(images) && images.length > 0 ? images : ["https://images.unsplash.com/photo-1511192336575-5a79af67a629?q=80&w=1000&auto=format&fit=crop"],
       demoVideo: demoVideo || "",
+      listingType: listingType || prod.listingType,
+      rentPriceMonthly: rentPriceMonthly ? parseFloat(rentPriceMonthly) : prod.rentPriceMonthly,
+      brand: brand || prod.brand,
     });
 
     res.json(updated);

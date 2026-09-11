@@ -1,6 +1,6 @@
 {
   "name": "Regear",
-  "description": "A niche marketplace for buying and selling second-hand musical instruments with audio demos, trust ratings, and try-before-buy.",
+  "description": "ReGear is a circular economy platform for renting and buying pre-loved musical instruments—affordable for you, sustainable for our planet.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

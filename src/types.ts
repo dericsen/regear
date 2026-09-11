@@ -24,18 +24,32 @@ export interface Product {
   description: string;
   price: number;
   condition: Condition;
-  category: string; // e.g., "Guitars", "Keyboards", "Amps", "Effects", "Other"
+  category: string; // e.g., "Guitars", "Keyboards", "Drums", "Amps", "Effects", "Other"
   images: string[];
   demoVideo: string; // URL / audio / video path or demo identifier
   sellerId: string;
   sellerName: string;
   sellerVerified: boolean;
   sellerRating: number;
+  rating?: number;
   isVerifiedGear?: boolean;
   verificationScore?: number;
   suggestedPriceMin?: number;
   suggestedPriceMax?: number;
+  listingType?: "rent" | "buy" | "both";
+  rentPriceMonthly?: number;
+  reviewCount?: number;
+  co2SavedKg?: number;
+  brand?: string;
   createdAt: string;
+}
+
+export interface CartItem {
+  product: Product;
+  mode?: "rent" | "buy";
+  type?: "rent" | "buy";
+  rentalMonths?: number;
+  quantity: number;
 }
 
 export interface Review {
