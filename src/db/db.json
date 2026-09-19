@@ -52,6 +52,20 @@
       "isVerified": false,
       "rating": 5,
       "createdAt": "2025-03-01T15:45:00.000Z"
+    },
+    {
+      "id": "usr-zm5o6bh",
+      "username": "TestUser99",
+      "email": "test99@example.com",
+      "passwordHash": "mypassword123",
+      "profileImage": "https://api.dicebear.com/7.x/identicon/svg?seed=TestUser99",
+      "bio": "",
+      "musicGenre": "",
+      "instrumentsOwned": [],
+      "role": "buyer",
+      "isVerified": false,
+      "rating": 5,
+      "createdAt": "2026-09-19T03:26:19.152Z"
     }
   ],
   "products": [

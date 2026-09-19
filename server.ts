@@ -62,6 +62,14 @@ const PORT = 3000;
 
   // --- API Routes ---
 
+  app.get("/api", (req: Request, res: Response) => {
+    res.json({ status: "ok", message: "ReGear API Serverless Backend Operational", timestamp: new Date().toISOString() });
+  });
+
+  app.get("/api/health", (req: Request, res: Response) => {
+    res.json({ status: "ok", message: "ReGear API Serverless Backend Operational", timestamp: new Date().toISOString() });
+  });
+
   // 1. AUTHENTICATION
   app.post("/api/auth/register", (req: Request, res: Response) => {
     try {
@@ -455,6 +463,11 @@ const PORT = 3000;
     res.json({ user: updated });
   });
 
+  // 404 handler for unmatched API routes (always return JSON, never fall through to HTML)
+  app.all("/api/*", (req: Request, res: Response) => {
+    res.status(404).json({ error: `API route not found: ${req.method} ${req.originalUrl || req.url}` });
+  });
+
   // Global Express Error Handler (always return JSON error)
   app.use((err: any, req: Request, res: Response, next: NextFunction) => {
     console.error("[Express Uncaught Error]:", err);
@@ -494,3 +507,5 @@ async function run() {
 if (!process.env.VERCEL) {
   run();
 }
+
+export default app;
