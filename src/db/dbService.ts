@@ -3,7 +3,8 @@ import fs from "fs";
 import path from "path";
 import { User, Product, Review, Message, Comment } from "../types";
 
-const DB_DIR = path.join(process.cwd(), "src", "db");
+const isVercel = Boolean(process.env.VERCEL);
+const DB_DIR = isVercel ? "/tmp" : path.join(process.cwd(), "src", "db");
 const DB_FILE = path.join(DB_DIR, "db.json");
 
 interface DBStructure {
@@ -19,6 +20,7 @@ const DEFAULT_USERS: User[] = [
     id: "seller-jimi",
     username: "JimiToneMaster",
     email: "jimi@regear.com",
+    passwordHash: "password123",
     profileImage: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400&auto=format&fit=crop",
     bio: "Classic rock and blues expert. Collecting and trading since the late 70s. All gear is certified pristine.",
     musicGenre: "Psychedelic Rock / Blues",
@@ -32,6 +34,7 @@ const DEFAULT_USERS: User[] = [
     id: "seller-moog",
     username: "AlexGear",
     email: "alex@regear.com",
+    passwordHash: "password123",
     profileImage: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=400&auto=format&fit=crop",
     bio: "Analog synthesizers builder and audio engineer. Specializing in modular components and custom filter circuitry.",
     musicGenre: "Electronic / Ambient",
@@ -45,6 +48,7 @@ const DEFAULT_USERS: User[] = [
     id: "buyer-david",
     username: "DavidSustain",
     email: "david@regear.com",
+    passwordHash: "password123",
     profileImage: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400&auto=format&fit=crop",
     bio: "Looking for long delays and warm tones. Constantly exploring soundscapes.",
     musicGenre: "Progressive Rock / Ambient",
@@ -234,18 +238,34 @@ class DatabaseService {
         const fileContent = fs.readFileSync(DB_FILE, "utf-8");
         this.data = JSON.parse(fileContent);
       } else {
-        // First initialization, write default seeds
-        this.data = {
-          users: [...DEFAULT_USERS],
-          products: [...DEFAULT_PRODUCTS],
-          reviews: [...DEFAULT_REVIEWS],
-          messages: [...DEFAULT_MESSAGES],
-          comments: [...DEFAULT_COMMENTS],
-        };
+        // If DB_FILE is in /tmp or not created yet, check if project seed db.json exists
+        const projectSeedFile = path.join(process.cwd(), "src", "db", "db.json");
+        if (fs.existsSync(projectSeedFile)) {
+          try {
+            const seedContent = fs.readFileSync(projectSeedFile, "utf-8");
+            this.data = JSON.parse(seedContent);
+          } catch {
+            this.data = {
+              users: [...DEFAULT_USERS],
+              products: [...DEFAULT_PRODUCTS],
+              reviews: [...DEFAULT_REVIEWS],
+              messages: [...DEFAULT_MESSAGES],
+              comments: [...DEFAULT_COMMENTS],
+            };
+          }
+        } else {
+          this.data = {
+            users: [...DEFAULT_USERS],
+            products: [...DEFAULT_PRODUCTS],
+            reviews: [...DEFAULT_REVIEWS],
+            messages: [...DEFAULT_MESSAGES],
+            comments: [...DEFAULT_COMMENTS],
+          };
+        }
         this.save();
       }
     } catch (err) {
-      console.error("Failed to initialize database file, falling back to memory database.", err);
+      console.warn("Failed to initialize database file, falling back to memory database.", err);
       this.data = {
         users: [...DEFAULT_USERS],
         products: [...DEFAULT_PRODUCTS],
@@ -260,7 +280,7 @@ class DatabaseService {
     try {
       fs.writeFileSync(DB_FILE, JSON.stringify(this.data, null, 2), "utf-8");
     } catch (err) {
-      console.error("Failed to write data to storage db.json", err);
+      console.warn("Warning: Could not write to disk storage (read-only filesystem). State remains active in memory:", err);
     }
   }
 

@@ -1,8 +1,8 @@
 // server.ts
 import express, { Request, Response, NextFunction } from "express";
 import path from "path";
-import { db } from "./src/db/dbService.js";
-import { User, Product, Review, Message, Comment } from "./src/types.js";
+import { db } from "./src/db/dbService";
+import { User, Product, Review, Message, Comment } from "./src/types";
 
 // Express type augmentation for authenticated requests
 declare global {
@@ -56,9 +56,10 @@ const PORT = 3000;
 
     const newUser: User = {
       id: "usr-" + Math.random().toString(36).substring(2, 9),
-      username,
-      email,
-      profileImage: `https://api.dicebear.com/7.x/identicon/svg?seed=${username}`,
+      username: username.trim(),
+      email: email.trim().toLowerCase(),
+      passwordHash: password,
+      profileImage: `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(username.trim())}`,
       bio: "",
       musicGenre: "",
       instrumentsOwned: [],
@@ -70,9 +71,11 @@ const PORT = 3000;
 
     db.addUser(newUser);
 
-    res.json({
+    const { passwordHash: _, ...safeUser } = newUser;
+
+    res.status(201).json({
       token: newUser.id,
-      user: newUser,
+      user: safeUser,
     });
   });
 
@@ -83,15 +86,21 @@ const PORT = 3000;
       return res.status(400).json({ error: "Username and password are required" });
     }
 
-    // Since this is a pre-production sandboxed app, we lookup standard seed users or newly added users
-    const user = db.getUserByUsername(username) || db.getUserByEmail(username);
+    const trimmedIdentifier = username.trim();
+    const user = db.getUserByUsername(trimmedIdentifier) || db.getUserByEmail(trimmedIdentifier);
     if (!user) {
       return res.status(401).json({ error: "Invalid username or password" });
     }
 
+    if (user.passwordHash && user.passwordHash !== password) {
+      return res.status(401).json({ error: "Invalid username or password" });
+    }
+
+    const { passwordHash: _, ...safeUser } = user;
+
     res.json({
       token: user.id,
-      user,
+      user: safeUser,
     });
   });
 
@@ -436,4 +445,7 @@ async function run() {
   }
 }
 
-run();
+// Only bind and run if we are NOT in a Vercel Serverless environment
+if (!process.env.VERCEL) {
+  run();
+}
