@@ -66,6 +66,20 @@
       "isVerified": false,
       "rating": 5,
       "createdAt": "2026-09-19T03:26:19.152Z"
+    },
+    {
+      "id": "usr-dgsx2ir",
+      "username": "rick",
+      "email": "ricky.juantan@binus.ac.id",
+      "passwordHash": "abcd",
+      "profileImage": "https://api.dicebear.com/7.x/identicon/svg?seed=rick",
+      "bio": "",
+      "musicGenre": "",
+      "instrumentsOwned": [],
+      "role": "buyer",
+      "isVerified": false,
+      "rating": 5,
+      "createdAt": "2026-09-19T14:34:11.689Z"
     }
   ],
   "products": [
@@ -285,6 +299,15 @@
       "productId": "prod-strat",
       "content": "Can I test it in person or rent for 1 month first?",
       "createdAt": "2026-09-19T04:41:53.113Z"
+    },
+    {
+      "id": "msg-6ze089m",
+      "senderId": "usr-dgsx2ir",
+      "senderName": "rick",
+      "receiverId": "seller-jimi",
+      "receiverName": "JimiToneMaster",
+      "content": "hai",
+      "createdAt": "2026-09-19T14:37:51.290Z"
     }
   ],
   "comments": [

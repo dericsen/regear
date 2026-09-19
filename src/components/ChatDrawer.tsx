@@ -324,11 +324,11 @@ export default function ChatDrawer({
         {/* Main Body: 2 Columns */}
         <div className="flex-1 flex overflow-hidden relative">
           {/* Left Column: Conversations List (Hidden on mobile if conversation is active) */}
-          <div
-            className={`w-full md:w-80 lg:w-96 border-r border-stone-200 bg-stone-50/70 flex flex-col ${
-              activePartnerId ? "hidden md:flex" : "flex"
-            }`}
-          >
+<div
+  className={`w-full md:w-80 lg:w-96 shrink-0 border-r border-stone-200 bg-stone-50/70 flex flex-col ${
+    activePartnerId ? "hidden md:flex" : "flex"
+  }`}
+>
             {/* Search filter */}
             <div className="p-3 border-b border-stone-200 bg-white">
               <div className="relative">
@@ -422,11 +422,11 @@ export default function ChatDrawer({
           </div>
 
           {/* Right Column: Active Chat View */}
-          <div
-            className={`flex-1 flex flex-col bg-white ${
-              !activePartnerId ? "hidden md:flex" : "flex"
-            }`}
-          >
+<div
+  className={`flex-1 min-w-0 flex flex-col bg-white ${
+    !activePartnerId ? "hidden md:flex" : "flex"
+  }`}
+>
             {activePartnerId ? (
               <>
                 {/* Active Partner Top Bar */}

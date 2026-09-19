@@ -103,7 +103,7 @@ export default function Header({
         </div>
 
         {/* Center Nav Links */}
-        <nav className="hidden lg:flex items-center space-x-7 text-[13px] font-bold text-[#44403c]">
+        <nav className="hidden lg:flex flex-1 justify-center items-center space-x-7 text-[13px] font-bold text-[#44403c] whitespace-nowrap">
           <button
             onClick={() => onSelectFilter("rent")}
             className={`transition-colors hover:text-[#f27d26] ${
