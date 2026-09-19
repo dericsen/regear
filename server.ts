@@ -383,17 +383,21 @@ const PORT = Number(process.env.PORT) || 3000;
   });
 
   // 6. CHAT MESSAGING
-  app.get("/api/chat/conversations", authMiddleware, (req: Request, res: Response) => {
+  const getConversationsHandler = (req: Request, res: Response) => {
     if (!req.user) return res.status(401).json({ error: "Unauthorized" });
     res.json(db.getConversations(req.user.id));
-  });
+  };
+  app.get("/api/chat/conversations", authMiddleware, getConversationsHandler);
+  app.get("/api/conversations", authMiddleware, getConversationsHandler);
 
-  app.get("/api/chat/messages/:partnerId", authMiddleware, (req: Request, res: Response) => {
+  const getMessagesHandler = (req: Request, res: Response) => {
     if (!req.user) return res.status(401).json({ error: "Unauthorized" });
     res.json(db.getMessagesBetween(req.user.id, req.params.partnerId));
-  });
+  };
+  app.get("/api/chat/messages/:partnerId", authMiddleware, getMessagesHandler);
+  app.get("/api/messages/:partnerId", authMiddleware, getMessagesHandler);
 
-  app.post("/api/chat/messages", authMiddleware, (req: Request, res: Response) => {
+  const postMessageHandler = (req: Request, res: Response) => {
     if (!req.user) return res.status(401).json({ error: "Unauthorized" });
     const { receiverId, content, productId } = req.body;
 
@@ -419,6 +423,14 @@ const PORT = Number(process.env.PORT) || 3000;
 
     db.addMessage(msg);
     res.status(201).json(msg);
+  };
+  app.post("/api/chat/messages", authMiddleware, postMessageHandler);
+  app.post("/api/messages", authMiddleware, postMessageHandler);
+
+  // Available users to initiate a chat with
+  app.get("/api/chat/users", authMiddleware, (req: Request, res: Response) => {
+    if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+    res.json(db.getContactableUsers(req.user.id));
   });
 
   // 7. USER PROFILE DETAIL (PUBLIC FOR SHOPPERS)

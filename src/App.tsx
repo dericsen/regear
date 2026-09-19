@@ -17,6 +17,7 @@ import ProductDetailModal from "./components/ProductDetailModal";
 import CartDrawer from "./components/CartDrawer";
 import WishlistModal from "./components/WishlistModal";
 import PromoReels from "./components/PromoReels";
+import ChatDrawer from "./components/ChatDrawer";
 import { DEFAULT_PRODUCTS } from "./data/defaultProducts";
 import {
   HowItWorksModal,
@@ -24,8 +25,7 @@ import {
   AIVerifiedModal,
   AboutUsModal,
   ListGearModal,
-  AuthModal,
-  ChatModal
+  AuthModal
 } from "./components/Modals";
 
 export default function App() {
@@ -48,6 +48,7 @@ export default function App() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [authError, setAuthError] = useState("");
+  const [unreadChatCount, setUnreadChatCount] = useState<number>(0);
 
   // --- Products Data (Default to seed products immediately) ---
   const [products, setProducts] = useState<Product[]>(DEFAULT_PRODUCTS);
@@ -233,8 +234,37 @@ export default function App() {
     setCart([]);
   };
 
+  // Poll active chat conversations count
+  useEffect(() => {
+    if (!token) {
+      setUnreadChatCount(0);
+      return;
+    }
+    const checkConversations = async () => {
+      try {
+        const res = await fetch("/api/chat/conversations", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setUnreadChatCount(Array.isArray(data) ? data.length : 0);
+        }
+      } catch (err) {
+        // silent
+      }
+    };
+    checkConversations();
+    const interval = setInterval(checkConversations, 10000);
+    return () => clearInterval(interval);
+  }, [token]);
+
   // Chat handlers
   const handleContactSeller = (sellerId: string, sellerName: string, product?: Product) => {
+    if (!currentUser) {
+      setIsRegisterMode(false);
+      setIsLoginModalOpen(true);
+      return;
+    }
     setActiveChatPartner({ id: sellerId, name: sellerName });
     if (product) setChatProduct(product);
     setSelectedProduct(null);
@@ -384,6 +414,17 @@ export default function App() {
         onSearchChange={setSearchQuery}
         onOpenCart={() => setIsCartOpen(true)}
         onOpenWishlist={() => setIsWishlistOpen(true)}
+        onOpenChat={() => {
+          if (!currentUser) {
+            setIsRegisterMode(false);
+            setIsLoginModalOpen(true);
+          } else {
+            setActiveChatPartner(null);
+            setChatProduct(null);
+            setIsChatOpen(true);
+          }
+        }}
+        unreadChatCount={unreadChatCount}
         onOpenLogin={() => {
           setIsRegisterMode(false);
           setIsLoginModalOpen(true);
@@ -549,18 +590,27 @@ export default function App() {
         }}
       />
 
-      {/* Chat Modal */}
-      <ChatModal
+      {/* Live ReGear Chat Drawer */}
+      <ChatDrawer
         isOpen={isChatOpen}
-        sellerName={activeChatPartner ? activeChatPartner.name : "Seller"}
-        product={chatProduct}
-        messages={chatMessages}
+        currentUser={currentUser}
+        token={token}
+        initialPartner={activeChatPartner}
+        initialProduct={chatProduct}
         onClose={() => {
           setIsChatOpen(false);
           setActiveChatPartner(null);
           setChatProduct(null);
         }}
-        onSendMessage={handleSendMessage}
+        onOpenLogin={() => {
+          setIsChatOpen(false);
+          setIsRegisterMode(false);
+          setIsLoginModalOpen(true);
+        }}
+        onViewProduct={(p) => {
+          setIsChatOpen(false);
+          setSelectedProduct(p);
+        }}
       />
 
       {/* Promo Tone Reels Modal */}

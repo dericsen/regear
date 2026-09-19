@@ -399,25 +399,52 @@ class DatabaseService {
       (m) => m.senderId === userId || m.receiverId === userId
     );
 
-    const partners = new Map<string, { id: string; name: string; lastMessage: string; time: string }>();
+    const partners = new Map<string, {
+      id: string;
+      name: string;
+      profileImage?: string;
+      role?: string;
+      isVerified?: boolean;
+      lastMessage: string;
+      productId?: string;
+      productTitle?: string;
+      productImage?: string;
+      productPrice?: number;
+      time: string;
+    }>();
 
     userMessages.forEach((m) => {
       const isSender = m.senderId === userId;
       const partnerId = isSender ? m.receiverId : m.senderId;
       const partnerName = isSender ? m.receiverName : m.senderName;
+      const partnerUser = this.getUser(partnerId);
+      const product = m.productId ? this.getProduct(m.productId) : undefined;
       
       const current = partners.get(partnerId);
       if (!current || new Date(m.createdAt).getTime() > new Date(current.time).getTime()) {
         partners.set(partnerId, {
           id: partnerId,
-          name: partnerName,
+          name: partnerUser?.username || partnerName,
+          profileImage: partnerUser?.profileImage || "",
+          role: partnerUser?.role || "member",
+          isVerified: partnerUser?.isVerified || false,
           lastMessage: m.content,
+          productId: m.productId,
+          productTitle: product?.title,
+          productImage: product?.images?.[0],
+          productPrice: product?.price,
           time: m.createdAt,
         });
       }
     });
 
     return Array.from(partners.values()).sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+  }
+
+  getContactableUsers(excludeUserId?: string) {
+    return this.data.users
+      .filter((u) => u.id !== excludeUserId)
+      .map(({ passwordHash, ...u }) => u);
   }
 
   // --- Comments ---

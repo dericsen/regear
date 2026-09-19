@@ -275,6 +275,16 @@
       "productId": "prod-strat",
       "content": "Hey David! Yes indeed, neck is straight as an arrow and truss rod works smoothly package-turn both directions. It's a real dream to play.",
       "createdAt": "2026-06-05T10:30:00.000Z"
+    },
+    {
+      "id": "msg-pki3zc0",
+      "senderId": "buyer-david",
+      "senderName": "DavidSustain",
+      "receiverId": "seller-jimi",
+      "receiverName": "JimiToneMaster",
+      "productId": "prod-strat",
+      "content": "Can I test it in person or rent for 1 month first?",
+      "createdAt": "2026-09-19T04:41:53.113Z"
     }
   ],
   "comments": [

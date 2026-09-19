@@ -74,6 +74,21 @@ export interface Message {
   createdAt: string;
 }
 
+export interface Conversation {
+  id: string; // partnerId
+  name: string;
+  profileImage?: string;
+  role?: Role | string;
+  isVerified?: boolean;
+  lastMessage: string;
+  productId?: string;
+  productTitle?: string;
+  productImage?: string;
+  productPrice?: number;
+  time: string;
+  unreadCount?: number;
+}
+
 export interface Comment {
   id: string;
   productId: string;

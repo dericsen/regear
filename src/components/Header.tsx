@@ -15,7 +15,8 @@ import {
   Sparkles,
   Leaf,
   Menu,
-  X
+  X,
+  MessageSquare
 } from "lucide-react";
 import { User, CartItem } from "../types";
 
@@ -29,6 +30,8 @@ interface HeaderProps {
   onSearchChange: (q: string) => void;
   onOpenCart: () => void;
   onOpenWishlist: () => void;
+  onOpenChat: () => void;
+  unreadChatCount?: number;
   onOpenLogin: () => void;
   onLogout: () => void;
   onOpenHowItWorks: () => void;
@@ -72,6 +75,8 @@ export default function Header({
   onSearchChange,
   onOpenCart,
   onOpenWishlist,
+  onOpenChat,
+  unreadChatCount = 0,
   onOpenLogin,
   onLogout,
   onOpenHowItWorks,
@@ -150,8 +155,25 @@ export default function Header({
           </button>
         </nav>
 
-        {/* Right Actions: Wishlist, Cart, Profile */}
-        <div className="flex items-center space-x-3.5">
+        {/* Right Actions: Wishlist, Cart, Chat, Profile */}
+        <div className="flex items-center space-x-2 sm:space-x-3">
+          {/* Messages / Chat Button */}
+          <button
+            onClick={onOpenChat}
+            className="flex items-center space-x-1.5 text-xs font-bold text-[#44403c] hover:text-[#f27d26] transition-colors p-2 rounded-xl hover:bg-stone-100/70 relative"
+            title="Messages & Chat"
+          >
+            <div className="relative">
+              <MessageSquare className="w-4 h-4" />
+              {unreadChatCount > 0 && (
+                <span className="absolute -top-1.5 -right-2 bg-[#f27d26] text-white text-[9px] font-black w-3.5 h-3.5 rounded-full flex items-center justify-center animate-pulse">
+                  {unreadChatCount}
+                </span>
+              )}
+            </div>
+            <span className="hidden sm:inline">Messages</span>
+          </button>
+
           {/* Wishlist */}
           <button
             onClick={onOpenWishlist}
@@ -218,6 +240,16 @@ export default function Header({
                   >
                     <UserIcon className="w-3.5 h-3.5 text-stone-400" />
                     <span>My Profile</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      onOpenChat();
+                    }}
+                    className="w-full text-left px-3.5 py-2 text-xs font-bold text-stone-700 hover:bg-stone-50 flex items-center space-x-2"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5 text-stone-400" />
+                    <span>Messages & Inquiries</span>
                   </button>
                   <button
                     onClick={() => {
@@ -319,6 +351,23 @@ export default function Header({
             className="w-full text-left px-3 py-2 text-sm font-bold text-stone-800 rounded-lg hover:bg-stone-50"
           >
             SDG Impact (Circular Economy)
+          </button>
+          <button
+            onClick={() => {
+              onOpenChat();
+              setIsMobileMenuOpen(false);
+            }}
+            className="w-full text-left px-3 py-2 text-sm font-bold text-[#1c1917] rounded-lg hover:bg-stone-50 flex items-center justify-between"
+          >
+            <span className="flex items-center space-x-2">
+              <MessageSquare className="w-4 h-4 text-[#f27d26]" />
+              <span>Messages & Inquiries</span>
+            </span>
+            {unreadChatCount > 0 && (
+              <span className="bg-[#f27d26] text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">
+                {unreadChatCount}
+              </span>
+            )}
           </button>
           <button
             onClick={() => {
