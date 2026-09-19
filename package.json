@@ -11,6 +11,9 @@
     "lint": "tsc --noEmit",
     "start": "node dist/server.cjs"
   },
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "dependencies": {
     "@google/genai": "^2.4.0",
     "@tailwindcss/oxide-linux-x64-gnu": "^4.3.3",
