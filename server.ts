@@ -14,12 +14,16 @@ declare global {
 }
 
 export const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
-  // 0. URL Normalization Middleware for Vercel Serverless
+  // CORS and Headers middleware (essential for production deployments like Railway)
   app.use((req: Request, res: Response, next: NextFunction) => {
-    if (req.url && !req.url.startsWith("/api") && !req.url.startsWith("/_")) {
-      req.url = `/api${req.url.startsWith("/") ? "" : "/"}${req.url}`;
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+    if (req.method === "OPTIONS") {
+      res.sendStatus(204);
+      return;
     }
     next();
   });
