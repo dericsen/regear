@@ -16,8 +16,32 @@ declare global {
 export const app = express();
 const PORT = 3000;
 
-  // Use JSON middleware
+  // 0. URL Normalization Middleware for Vercel Serverless
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    if (req.url && !req.url.startsWith("/api") && !req.url.startsWith("/_")) {
+      req.url = `/api${req.url.startsWith("/") ? "" : "/"}${req.url}`;
+    }
+    next();
+  });
+
+  // Use JSON and URL-encoded middleware
   app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+
+  // Safe body parsing fallback
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    if (typeof req.body === "string") {
+      try {
+        req.body = JSON.parse(req.body);
+      } catch {
+        // keep string
+      }
+    }
+    if (!req.body) {
+      req.body = {};
+    }
+    next();
+  });
 
   // --- Auth Middleware ---
   // Simple yet bulletproof Bearer authentication with direct lookup
@@ -40,68 +64,83 @@ const PORT = 3000;
 
   // 1. AUTHENTICATION
   app.post("/api/auth/register", (req: Request, res: Response) => {
-    const { username, email, password, role } = req.body;
+    try {
+      const body = req.body || {};
+      const username = body.username ? String(body.username).trim() : "";
+      const email = body.email ? String(body.email).trim().toLowerCase() : "";
+      const password = body.password ? String(body.password) : "";
+      const role = body.role === "seller" ? "seller" : "buyer";
 
-    if (!username || !email || !password) {
-      return res.status(400).json({ error: "Username, email, and password are required" });
+      if (!username || !email || !password) {
+        return res.status(400).json({ error: "Username, email, and password are required" });
+      }
+
+      if (db.getUserByUsername(username)) {
+        return res.status(400).json({ error: "Username is already taken" });
+      }
+
+      if (db.getUserByEmail(email)) {
+        return res.status(400).json({ error: "Email is already registered" });
+      }
+
+      const newUser: User = {
+        id: "usr-" + Math.random().toString(36).substring(2, 9),
+        username,
+        email,
+        passwordHash: password,
+        profileImage: `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(username)}`,
+        bio: "",
+        musicGenre: "",
+        instrumentsOwned: [],
+        role,
+        isVerified: false,
+        rating: 5.0,
+        createdAt: new Date().toISOString(),
+      };
+
+      db.addUser(newUser);
+
+      const { passwordHash: _, ...safeUser } = newUser;
+
+      return res.status(201).json({
+        token: newUser.id,
+        user: safeUser,
+      });
+    } catch (err: any) {
+      console.error("[Register Error]:", err);
+      return res.status(500).json({ error: err?.message || "Internal server error during registration" });
     }
-
-    if (db.getUserByUsername(username)) {
-      return res.status(400).json({ error: "Username is already taken" });
-    }
-
-    if (db.getUserByEmail(email)) {
-      return res.status(400).json({ error: "Email is already registered" });
-    }
-
-    const newUser: User = {
-      id: "usr-" + Math.random().toString(36).substring(2, 9),
-      username: username.trim(),
-      email: email.trim().toLowerCase(),
-      passwordHash: password,
-      profileImage: `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(username.trim())}`,
-      bio: "",
-      musicGenre: "",
-      instrumentsOwned: [],
-      role: role === "seller" ? "seller" : "buyer",
-      isVerified: false,
-      rating: 5.0,
-      createdAt: new Date().toISOString(),
-    };
-
-    db.addUser(newUser);
-
-    const { passwordHash: _, ...safeUser } = newUser;
-
-    res.status(201).json({
-      token: newUser.id,
-      user: safeUser,
-    });
   });
 
   app.post("/api/auth/login", (req: Request, res: Response) => {
-    const { username, password } = req.body;
+    try {
+      const body = req.body || {};
+      const username = body.username ? String(body.username).trim() : "";
+      const password = body.password ? String(body.password) : "";
 
-    if (!username || !password) {
-      return res.status(400).json({ error: "Username and password are required" });
+      if (!username || !password) {
+        return res.status(400).json({ error: "Username and password are required" });
+      }
+
+      const user = db.getUserByUsername(username) || db.getUserByEmail(username);
+      if (!user) {
+        return res.status(401).json({ error: "Invalid username or password" });
+      }
+
+      if (user.passwordHash && user.passwordHash !== password) {
+        return res.status(401).json({ error: "Invalid username or password" });
+      }
+
+      const { passwordHash: _, ...safeUser } = user;
+
+      return res.json({
+        token: user.id,
+        user: safeUser,
+      });
+    } catch (err: any) {
+      console.error("[Login Error]:", err);
+      return res.status(500).json({ error: err?.message || "Internal server error during login" });
     }
-
-    const trimmedIdentifier = username.trim();
-    const user = db.getUserByUsername(trimmedIdentifier) || db.getUserByEmail(trimmedIdentifier);
-    if (!user) {
-      return res.status(401).json({ error: "Invalid username or password" });
-    }
-
-    if (user.passwordHash && user.passwordHash !== password) {
-      return res.status(401).json({ error: "Invalid username or password" });
-    }
-
-    const { passwordHash: _, ...safeUser } = user;
-
-    res.json({
-      token: user.id,
-      user: safeUser,
-    });
   });
 
   app.get("/api/auth/me", authMiddleware, (req: Request, res: Response) => {
@@ -414,6 +453,12 @@ const PORT = 3000;
     }
 
     res.json({ user: updated });
+  });
+
+  // Global Express Error Handler (always return JSON error)
+  app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+    console.error("[Express Uncaught Error]:", err);
+    res.status(500).json({ error: err?.message || "Internal server error" });
   });
 
   // --- Vite Dev Server Middleware Integration ---

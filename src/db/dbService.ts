@@ -294,11 +294,15 @@ class DatabaseService {
   }
 
   getUserByUsername(username: string): User | undefined {
-    return this.data.users.find((u) => u.username.toLowerCase() === username.toLowerCase());
+    if (!username) return undefined;
+    const target = username.trim().toLowerCase();
+    return this.data.users.find((u) => u && u.username && u.username.trim().toLowerCase() === target);
   }
 
   getUserByEmail(email: string): User | undefined {
-    return this.data.users.find((u) => u.email.toLowerCase() === email.toLowerCase());
+    if (!email) return undefined;
+    const target = email.trim().toLowerCase();
+    return this.data.users.find((u) => u && u.email && u.email.trim().toLowerCase() === target);
   }
 
   addUser(user: User): User {
